@@ -1,0 +1,33 @@
+diff --git a/configure.ac b/configure.ac
+index 452d4a9..0fdd3b3 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -19,7 +19,6 @@ AC_ARG_ENABLE(debug-stdcxx,
+ 
+ OBJDIR=obj
+ SRCDIR=src
+-INCDIR=include
+ MISCDIR=misc
+ QUICKCHECKDIR=quickcheck
+ AC_SUBST(OBJDIR)
+@@ -68,9 +67,6 @@ AM_CONDITIONAL([BUILD_DOCS], [test "$enable_docs" = yes])
+ 
+ AC_CONFIG_FILES([
+ Makefile
+-include/Makefile
+-include/mdds/Makefile
+-include/mdds/multi_type_vector/Makefile
+ example/Makefile
+ flat_segment_tree_test_mem.mem:src/test.mem.in
+ misc/mdds-$API_VERSION.pc:misc/mdds.pc.in
+diff --git a/example/Makefile.am b/example/Makefile.am
+index 877a5e2..3930e10 100644
+--- a/example/Makefile.am
++++ b/example/Makefile.am
+@@ -1,5 +1,5 @@
+ 
+-AM_CPPFLAGS = -I$(top_srcdir)/include -DNDEBUG
++AM_CPPFLAGS = $(shell pkg-config --cflags mdds-1.5) -DNDEBUG
+ 
+ EXTRA_PROGRAMS = \
+ 	flat-segment-tree \
