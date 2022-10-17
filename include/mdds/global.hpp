@@ -44,22 +44,24 @@
  * does not work with pointer values that point to strings defined
  * elsewhere.
  */
-#define MDDS_ASCII(literal) literal, sizeof(literal)-1
+#define MDDS_ASCII(literal) literal, sizeof(literal) - 1
 
 /**
  * \def MDDS_N_ELEMENTS(name)
  *
  * Calculates the length of \a name array provided that the array definition
  * is given in the same compilation unit.
+ *
+ * @deprecated Please use \c std::size instead.
  */
-#define MDDS_N_ELEMENTS(name) sizeof(name)/sizeof(name[0])
+#define MDDS_N_ELEMENTS(name) sizeof(name) / sizeof(name[0])
 
 #ifdef __GNUC__
-    #define MDDS_DEPRECATED __attribute__ ((deprecated))
+#define MDDS_DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
-    #define MDDS_DEPRECATED __declspec(deprecated)
+#define MDDS_DEPRECATED __declspec(deprecated)
 #else
-    #define MDDS_DEPRECATED
+#define MDDS_DEPRECATED
 #endif
 
 #ifndef MDDS_LOOP_UNROLLING
@@ -70,18 +72,27 @@
 #define MDDS_USE_OPENMP 0
 #endif
 
+#if defined(__AVX__) || defined(__AVX2__)
+#ifndef __SSE2__
+#define __SSE2__ 1
+#endif
+#endif
+
 namespace mdds {
 
 class general_error : public ::std::exception
 {
 public:
-    general_error(const ::std::string& msg) : m_msg(msg) {}
-    virtual ~general_error() throw() {}
+    general_error(const ::std::string& msg) : m_msg(msg)
+    {}
+    virtual ~general_error() noexcept
+    {}
 
-    virtual const char* what() const throw()
+    virtual const char* what() const noexcept
     {
         return m_msg.c_str();
     }
+
 private:
     ::std::string m_msg;
 };
@@ -89,82 +100,88 @@ private:
 class invalid_arg_error : public general_error
 {
 public:
-    invalid_arg_error(const ::std::string& msg) : general_error(msg) {}
+    invalid_arg_error(const ::std::string& msg) : general_error(msg)
+    {}
 };
 
 class size_error : public general_error
 {
 public:
-    size_error(const std::string& msg) : general_error(msg) {}
+    size_error(const std::string& msg) : general_error(msg)
+    {}
 };
 
 class type_error : public general_error
 {
 public:
-    type_error(const std::string& msg) : general_error(msg) {}
+    type_error(const std::string& msg) : general_error(msg)
+    {}
 };
 
 class integrity_error : public general_error
 {
 public:
-    integrity_error(const std::string& msg) : general_error(msg) {}
+    integrity_error(const std::string& msg) : general_error(msg)
+    {}
 };
-
-template<typename T, typename ...Args>
-std::unique_ptr<T> make_unique(Args&& ...args)
-{
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
 
 template<bool B>
 using bool_constant = std::integral_constant<bool, B>;
 
-template <typename T>
+template<typename T>
 class has_value_type
 {
     using y_type = char;
     using n_type = long;
 
-    template <typename U> static y_type test(typename U::value_type);
-    template <typename U> static n_type test(...);
+    template<typename U>
+    static y_type test(typename U::value_type);
+    template<typename U>
+    static n_type test(...);
 
 public:
     static constexpr bool value = sizeof(test<T>(0)) == sizeof(y_type);
 };
 
-template<typename _T, typename _IsConst>
+template<typename T, typename IsConst>
 struct const_or_not;
 
-template<typename _T>
-struct const_or_not<_T, std::true_type>
+template<typename T>
+struct const_or_not<T, std::true_type>
 {
-    using type = typename std::add_const<_T>::type;
+    using type = typename std::add_const<T>::type;
 };
 
-template<typename _T>
-struct const_or_not<_T, std::false_type>
+template<typename T>
+struct const_or_not<T, std::false_type>
 {
-    using type = _T;
+    using type = T;
 };
 
-template<typename _T, bool _Const>
-using const_t = typename const_or_not<_T, bool_constant<_Const>>::type;
+template<typename T, bool Const>
+using const_t = typename const_or_not<T, bool_constant<Const>>::type;
 
-template<typename _T, typename _IsConst>
+template<typename T, typename IsConst>
 struct get_iterator_type;
 
-template<typename _T>
-struct get_iterator_type<_T, std::true_type>
+template<typename T>
+struct get_iterator_type<T, std::true_type>
 {
-    using type = typename _T::const_iterator;
+    using type = typename T::const_iterator;
 };
 
-template<typename _T>
-struct get_iterator_type<_T, std::false_type>
+template<typename T>
+struct get_iterator_type<T, std::false_type>
 {
-    using type = typename _T::iterator;
+    using type = typename T::iterator;
 };
 
+template<int T>
+constexpr bool invalid_static_int()
+{
+    return false;
 }
+
+} // namespace mdds
 
 #endif

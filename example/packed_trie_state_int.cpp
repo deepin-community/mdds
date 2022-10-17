@@ -31,9 +31,10 @@
 #include <fstream>
 #include <mdds/trie_map.hpp>
 
-using namespace std;
+using std::cout;
+using std::endl;
 
-int main()
+int main() try
 {
     using map_type = mdds::packed_trie_map<mdds::trie::std_string_trait, int>;
 
@@ -142,18 +143,20 @@ int main()
     cout << endl;
 
     {
-        std::ofstream outfile("cities.bin", ios::binary);
+        std::ofstream outfile("cities.bin", std::ios::binary);
         cities.save_state(outfile);
     }
 
     map_type cities_loaded;
 
     {
-        std::ifstream infile("cities.bin", ios::binary);
+        std::ifstream infile("cities.bin", std::ios::binary);
         cities_loaded.load_state(infile);
     }
 
+    std::ios_base::fmtflags origflags = cout.flags();
     cout << "Equal to the original? " << std::boolalpha << (cities == cities_loaded) << endl;
+    cout.setf(origflags);
 
     cout << endl;
 
@@ -167,6 +170,10 @@ int main()
         cout << "  * " << city.first << ": " << city.second << endl;
 
     return EXIT_SUCCESS;
+}
+catch (...)
+{
+    return EXIT_FAILURE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */
