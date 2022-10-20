@@ -26,9 +26,8 @@
  *
  ************************************************************************/
 
-//!code-start
 #include <mdds/multi_type_vector.hpp>
-#include <mdds/multi_type_vector/trait.hpp>
+#include <mdds/multi_type_vector_trait.hpp>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -55,7 +54,7 @@ void print_block(const mtv_type::value_type& v)
     );
 }
 
-int main() try
+int main()
 {
     mtv_type con(20); // Initialized with 20 empty elements.
 
@@ -100,10 +99,5 @@ int main() try
 
     return EXIT_SUCCESS;
 }
-catch (...)
-{
-    return EXIT_FAILURE;
-}
-//!code-end
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

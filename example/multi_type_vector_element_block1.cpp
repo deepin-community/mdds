@@ -26,19 +26,17 @@
  *
  ************************************************************************/
 
-//!code-start
 #include <mdds/multi_type_vector.hpp>
-#include <mdds/multi_type_vector/trait.hpp>
+#include <mdds/multi_type_vector_trait.hpp>
 #include <iostream>
 
-using std::cout;
-using std::endl;
+using namespace std;
 using mdds::mtv::double_element_block;
 using mdds::mtv::string_element_block;
 
 using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func>;
 
-int main() try
+int main()
 {
     mtv_type db;  // starts with an empty container.
 
@@ -48,11 +46,11 @@ int main() try
     db.push_back(1.4);
     db.push_back(1.5);
 
-    db.push_back(std::string("A"));
-    db.push_back(std::string("B"));
-    db.push_back(std::string("C"));
-    db.push_back(std::string("D"));
-    db.push_back(std::string("E"));
+    db.push_back(string("A"));
+    db.push_back(string("B"));
+    db.push_back(string("C"));
+    db.push_back(string("D"));
+    db.push_back(string("E"));
 
     // At this point, you have 2 blocks in the container.
     cout << "block size: " << db.block_size() << endl;
@@ -74,18 +72,13 @@ int main() try
     ++it; // move to the next block, which is a string block.
 
     // Get a pointer to the raw array of the string element block.
-    const std::string* pz = string_element_block::data(*it->data);
+    const string* pz = string_element_block::data(*it->data);
 
     // Print out the string elements.
-    for (const std::string* pz_end = pz + it->size; pz != pz_end; ++pz)
+    for (const string* pz_end = pz + it->size; pz != pz_end; ++pz)
         cout << *pz << endl;
 
     return EXIT_SUCCESS;
 }
-catch (...)
-{
-    return EXIT_FAILURE;
-}
-//!code-end
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -27,11 +27,11 @@
  ************************************************************************/
 
 #include <mdds/multi_type_vector.hpp>
-#include <mdds/multi_type_vector/trait.hpp>
+#include <mdds/multi_type_vector_trait.hpp>
 
-#include <iostream>
+#include <stdio.h>
 #include <string>
-#include <chrono>
+#include <sys/time.h>
 
 namespace {
 
@@ -39,45 +39,43 @@ class stack_printer
 {
 public:
     explicit stack_printer(const char* msg) :
-        m_msg(msg)
+        msMsg(msg)
     {
-        std::cout << m_msg << ": --begin" << std::endl;
-        m_start_time = get_time();
+        fprintf(stdout, "%s: --begin\n", msMsg.c_str());
+        mfStartTime = getTime();
     }
 
     ~stack_printer()
     {
-        double end_time = get_time();
-        std::cout << m_msg << ": --end (duration: " << (end_time-m_start_time) << " sec)" << std::endl;
+        double fEndTime = getTime();
+        fprintf(stdout, "%s: --end (duration: %g sec)\n", msMsg.c_str(), (fEndTime-mfStartTime));
     }
 
-    void print_time(int line) const
+    void printTime(int line) const
     {
-        double end_time = get_time();
-        std::cout << m_msg << ": --(" << line << ") (duration: " << (end_time-m_start_time) << " sec)" << std::endl;
+        double fEndTime = getTime();
+        fprintf(stdout, "%s: --(%d) (duration: %g sec)\n", msMsg.c_str(), line, (fEndTime-mfStartTime));
     }
 
 private:
-    double get_time() const
+    double getTime() const
     {
-        unsigned long usec_since_epoch =
-            std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-
-        return usec_since_epoch / 1000000.0;
+        timeval tv;
+        gettimeofday(&tv, NULL);
+        return tv.tv_sec + tv.tv_usec / 1000000.0;
     }
 
-    std::string m_msg;
-    double m_start_time;
+    ::std::string msMsg;
+    double mfStartTime;
 };
 
 }
+
 
 void run_no_position_hint()
 {
     stack_printer __stack_printer__("::run_no_position_hint");
 
-    //!code-start: no-pos-hint
     using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func>;
 
     size_t size = 50000;
@@ -91,14 +89,12 @@ void run_no_position_hint()
         if (i % 2)
             db.set<double>(i, 1.0);
     }
-    //!code-end: no-pos-hint
 }
 
 void run_with_position_hint()
 {
     stack_printer __stack_printer__("::run_with_position_hint");
 
-    //!code-start: pos-hint
     using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func>;
 
     size_t size = 50000;
@@ -115,19 +111,14 @@ void run_with_position_hint()
             // one returned from the method for the next call.
             pos = db.set<double>(pos, i, 1.0);
     }
-    //!code-end: pos-hint
 }
 
-int main() try
+int main()
 {
     run_no_position_hint();
     run_with_position_hint();
 
     return EXIT_SUCCESS;
-}
-catch (...)
-{
-    return EXIT_FAILURE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

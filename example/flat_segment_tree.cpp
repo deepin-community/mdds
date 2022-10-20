@@ -29,11 +29,11 @@
 #include <mdds/flat_segment_tree.hpp>
 #include <iostream>
 
-using std::cout;
-using std::endl;
+using namespace std;
+
 using fst_type = mdds::flat_segment_tree<long, int>;
 
-int main() try
+int main()
 {
     // Define the begin and end points of the whole segment, and the default 
     // value.
@@ -58,10 +58,6 @@ int main() try
     // search, but requires the tree to be built beforehand.
     db.search_tree(62, value, &beg, &end);
     cout << "The value at 62 is " << value << ", and this segment spans from " << beg << " to " << end << endl;;
-}
-catch (...)
-{
-    return EXIT_FAILURE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

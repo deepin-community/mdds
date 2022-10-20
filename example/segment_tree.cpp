@@ -30,25 +30,24 @@
 #include <string>
 #include <iostream>
 
-using std::cout;
-using std::endl;
+using namespace std;
 
-typedef ::mdds::segment_tree<long, std::string> db_type;
+typedef ::mdds::segment_tree<long, string> db_type;
 
-struct string_printer
+struct string_printer : public unary_function<string*, void>
 {
-    void operator() (const std::string& s) const
+    void operator() (const string& s) const
     {
         cout << "search hit: " << s << endl;
     }
 };
 
-int main() try
+int main()
 {
     db_type db;
-    std::string A("A");
-    std::string B("B");
-    std::string C("C");
+    string A("A");
+    string B("B");
+    string C("C");
 
     // Insert data into the tree.
     db.insert(0,  10, A);
@@ -59,15 +58,11 @@ int main() try
     db.build_tree();
 
     // Run search and get the result.
-    db_type::search_results result = db.search(5);
+    db_type::search_result result = db.search(5);
 
     // Print the result.
     cout << "result size: " << result.size() << endl;
-    std::for_each(result.begin(), result.end(), string_printer());
-}
-catch (...)
-{
-    return EXIT_FAILURE;
+    for_each(result.begin(), result.end(), string_printer());
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */
