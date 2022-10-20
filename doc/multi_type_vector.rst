@@ -7,12 +7,83 @@ Quick start
 -----------
 
 The following code demonstrates a simple use case of storing values of double
-and :cpp:class:`std::string` types in a single container using :cpp:type:`~mdds::multi_type_vector`.
+and :cpp:class:`std::string` types in a single container using :cpp:class:`~mdds::multi_type_vector`.
 
-.. literalinclude:: ../example/multi_type_vector.cpp
-   :language: C++
-   :start-after: //!code-start
-   :end-before: //!code-end
+::
+
+    #include <mdds/multi_type_vector.hpp>
+    #include <mdds/multi_type_vector_trait.hpp>
+    #include <iostream>
+    #include <vector>
+    #include <string>
+
+    using std::cout;
+    using std::endl;
+
+    using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func>;
+
+    template<typename _Blk>
+    void print_block(const mtv_type::value_type& v)
+    {
+        // Each element block has static begin() and end() methods that return
+        // begin and end iterators, respectively, from the passed element block
+        // instance.
+        auto it = _Blk::begin(*v.data);
+        auto it_end = _Blk::end(*v.data);
+
+        std::for_each(it, it_end,
+            [](const typename _Blk::value_type& elem)
+            {
+                cout << " * " << elem << endl;
+            }
+        );
+    }
+
+    int main()
+    {
+        mtv_type con(20); // Initialized with 20 empty elements.
+
+        // Set values individually.
+        con.set(0, 1.1);
+        con.set(1, 1.2);
+        con.set(2, 1.3);
+
+        // Set a sequence of values in one step.
+        std::vector<double> vals = { 10.1, 10.2, 10.3, 10.4, 10.5 };
+        con.set(3, vals.begin(), vals.end());
+
+        // Set string values.
+        con.set(10, std::string("Andy"));
+        con.set(11, std::string("Bruce"));
+        con.set(12, std::string("Charlie"));
+
+        // Iterate through all blocks and print all elements.
+        for (const mtv_type::value_type& v : con)
+        {
+            switch (v.type)
+            {
+                case mdds::mtv::element_type_double:
+                {
+                    cout << "numeric block of size " << v.size << endl;
+                    print_block<mdds::mtv::double_element_block>(v);
+                    break;
+                }
+                case mdds::mtv::element_type_string:
+                {
+                    cout << "string block of size " << v.size << endl;
+                    print_block<mdds::mtv::string_element_block>(v);
+                    break;
+                }
+                case mdds::mtv::element_type_empty:
+                    cout << "empty block of size " << v.size << endl;
+                    cout << " - no data - " << endl;
+                default:
+                    ;
+            }
+        }
+
+        return EXIT_SUCCESS;
+    }
 
 You'll see the following console output when you compile and execute this code:
 
@@ -37,26 +108,17 @@ You'll see the following console output when you compile and execute this code:
     - no data -
 
 .. figure:: _static/images/mtv_block_structure.png
-   :align: center
+   :align: right
 
-   Logical structure between the primary array, blocks, and element blocks.
+   Ownership structure between the primary array, blocks, and element blocks.
 
-Each multi_type_vector instance maintains a logical storage structure of one
-primary array containing one or more blocks each of which consists of ``type``,
-``position``, ``size`` and ``data`` members:
-
-* ``type`` - numeric value representing the block type.
-* ``position`` - numeridc value representing the logical position of the first
-  element of the block.
-* ``size`` - number of elements present in the block a.k.a its logical size.
-* ``data`` - pointer to the secondary storage (element block) storing the element
-  values.
-
-In this example code, the ``type`` member is referenced to determine its block
-type and its logical size is determined from the ``size`` member.  For the
-numeric and string blocks, their ``data`` members, which should point to the
-memory addresses of their respective element blocks, are dereferenced in order
-to print out their element values to stdout inside the ``print_block`` function.
+Each container instance consists of an array of blocks each of which stores
+``type``, ``position``, ``size`` and ``data`` members.  In this example code,
+the ``type`` member is referenced to determine its block type and its logical
+size is determine from the ``size`` member.  For the numeric and string blocks,
+their ``data`` members, which should point to valid memory addresses of their
+respective element blocks, are dereferenced to gain access to them in order to
+print out their contents to stdout inside the ``print_block`` function.
 
 
 Use custom event handlers
@@ -69,17 +131,55 @@ define either a class or a struct that has the following methods:
 * **void element_block_acquired(mdds::mtv::base_element_block* block)**
 * **void element_block_released(mdds::mtv::base_element_block* block)**
 
-as its public methods, specify it as type named ``event_func`` in a trait struct,
-and pass it as the second template argument when instantiating your
-:cpp:type:`~mdds::multi_type_vector` type.  Refer to :cpp:type:`mdds::mtv::empty_event_func`
-for the detail on when each event handler method gets triggered.
+as its public methods, then pass it as the second template argument when
+instantiating your :cpp:class:`~mdds::multi_type_vector` type.  Refer to
+:cpp:type:`mdds::multi_type_vector::event_func` for the details on when each
+event handler method gets triggered.
 
-The following code example demonstrates how this all works:
+The following code example demonstrates how this all works::
 
-.. literalinclude:: ../example/multi_type_vector_event1.cpp
-   :language: C++
-   :start-after: //!code-start
-   :end-before: //!code-end
+    #include <mdds/multi_type_vector.hpp>
+    #include <mdds/multi_type_vector_trait.hpp>
+    #include <iostream>
+
+    using namespace std;
+
+    class event_hdl
+    {
+    public:
+        void element_block_acquired(mdds::mtv::base_element_block* block)
+        {
+            cout << "  * element block acquired" << endl;
+        }
+
+        void element_block_released(mdds::mtv::base_element_block* block)
+        {
+            cout << "  * element block released" << endl;
+        }
+    };
+
+    using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func, event_hdl>;
+
+    int main()
+    {
+        mtv_type db;  // starts with an empty container.
+
+        cout << "inserting string 'foo'..." << endl;
+        db.push_back(string("foo"));  // creates a new string element block.
+
+        cout << "inserting string 'bah'..." << endl;
+        db.push_back(string("bah"));  // appends to an existing string block.
+
+        cout << "inserting int 100..." << endl;
+        db.push_back(int(100)); // creates a new int element block.
+
+        cout << "emptying the container..." << endl;
+        db.clear(); // releases both the string and int element blocks.
+
+        cout << "exiting program..." << endl;
+
+        return EXIT_SUCCESS;
+    }
 
 You'll see the following console output when you compile and execute this code:
 
@@ -100,13 +200,10 @@ time the container creates (thus acquires) a new element block to store a value.
 It does *not* get called when a new value is appended to a pre-existing element
 block.  Similarly, the **element_block_releasd** handler gets triggered each
 time an existing element block storing non-empty values gets deleted.  One
-thing to keep in mind is that since these two handlers respond to events related
-to element blocks which are owned by non-empty blocks in the primary array,
-and empty blocks don't store any element block instances, creations or deletions
-of empty blocks don't trigger these event handlers.
-
-The trait also allows you to configure other behaviors of :cpp:type:`~mdds::multi_type_vector`.
-Refer to :cpp:type:`mdds::mtv::default_trait` for all available parameters.
+thing to keep in mind is that since these two handlers pertain to element
+blocks which are owned by non-empty blocks, and empty blocks don't own element
+block instances, creations or deletions of empty blocks don't trigger these
+event handlers.
 
 
 Get raw pointer to element block array
@@ -126,10 +223,62 @@ The following code demonstrates this by exposing raw array pointers to the
 internal arrays of numeric and string element blocks, and printing their
 element values directly from these array pointers.
 
-.. literalinclude:: ../example/multi_type_vector_element_block1.cpp
-   :language: C++
-   :start-after: //!code-start
-   :end-before: //!code-end
+::
+
+    #include <mdds/multi_type_vector.hpp>
+    #include <mdds/multi_type_vector_trait.hpp>
+    #include <iostream>
+
+    using namespace std;
+    using mdds::mtv::double_element_block;
+    using mdds::mtv::string_element_block;
+
+    using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func>;
+
+    int main()
+    {
+        mtv_type db;  // starts with an empty container.
+
+        db.push_back(1.1);
+        db.push_back(1.2);
+        db.push_back(1.3);
+        db.push_back(1.4);
+        db.push_back(1.5);
+
+        db.push_back(string("A"));
+        db.push_back(string("B"));
+        db.push_back(string("C"));
+        db.push_back(string("D"));
+        db.push_back(string("E"));
+
+        // At this point, you have 2 blocks in the container.
+        cout << "block size: " << db.block_size() << endl;
+        cout << "--" << endl;
+
+        // Get an iterator that points to the first block in the primary array.
+        mtv_type::const_iterator it = db.begin();
+
+        // Get a pointer to the raw array of the numeric element block using the
+        // 'data' method.
+        const double* p = double_element_block::data(*it->data);
+
+        // Print the elements from this raw array pointer.
+        for (const double* p_end = p + it->size; p != p_end; ++p)
+            cout << *p << endl;
+
+        cout << "--" << endl;
+
+        ++it; // move to the next block, which is a string block.
+
+        // Get a pointer to the raw array of the string element block.
+        const string* pz = string_element_block::data(*it->data);
+
+        // Print out the string elements.
+        for (const string* pz_end = pz + it->size; pz != pz_end; ++pz)
+            cout << *pz << endl;
+
+        return EXIT_SUCCESS;
+    }
 
 Compiling and execute this code produces the following output:
 
@@ -154,9 +303,9 @@ Traverse multiple multi_type_vector instances "sideways"
 --------------------------------------------------------
 
 In this section we will demonstrate a way to traverse multiple instances of
-:cpp:type:`~mdds::multi_type_vector` "sideways" using the
+:cpp:class:`~mdds::multi_type_vector` "sideways" using the
 :cpp:class:`mdds::mtv::collection` class.  What this class does is to wrap
-multiple instances of :cpp:type:`~mdds::multi_type_vector` and generate
+multiple instances of :cpp:class:`~mdds::multi_type_vector` and generate
 iterators that let you iterate the individual element values collectively in
 the direction orthogonal to the direction of the individual vector instances.
 
@@ -171,19 +320,18 @@ And let's say that the data looks like the following spreadsheet data:
 
 It consists of five columns, with each column storing 21 rows of data.  The
 first row is a header row, followed by 20 rows of values.  In this example, We
-will be using one :cpp:type:`~mdds::multi_type_vector` instance for each
+will be using one :cpp:class:`~mdds::multi_type_vector` instance for each
 column thus creating five instances in total, and store them in a
 ``std::vector`` container.
 
-The declaration of the data store will look like this:
+The declaration of the data store will look like this::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: declare
-   :end-before: //!code-end: declare
-   :dedent: 4
+    using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func>;
+    using collection_type = mdds::mtv::collection<mtv_type>;
 
-The first two lines specify the concrete :cpp:type:`~mdds::multi_type_vector`
+    std::vector<mtv_type> columns(5);
+
+The first two lines specify the concrete :cpp:class:`~mdds::multi_type_vector`
 type used for each individual column and the collection type that wraps the
 columns.  The third line instantiates the ``std::vector`` instance to store
 the columns, and we are setting its size to five to accommodate for five
@@ -191,74 +339,87 @@ columns.  We will make use of the collection_type later in this example after
 the columns have been populated.
 
 Now, we need to populate the columns with values.  First, we are setting the
-header row:
+header row::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: header-row
-   :end-before: //!code-end: header-row
-   :dedent: 4
+    // Populate the header row.
+    auto headers = { "ID", "Make", "Model", "Year", "Color" };
+    size_t i = 0;
+    std::for_each(headers.begin(), headers.end(), [&](const char* v) { columns[i++].push_back<std::string>(v); });
 
 We are then filling each column individually from column 1 through column 5.
-First up is column 1:
+First up is column 1::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: column-1
-   :end-before: //!code-end: column-1
-   :dedent: 4
+    // Fill column 1.
+    auto c1_values = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
+    std::for_each(c1_values.begin(), c1_values.end(), [&columns](int v) { columns[0].push_back(v); });
 
 Hopefully this code is straight-forward.  It initializes an array of values
 and push them to the column one at a time via
-:cpp:func:`~mdds::mtv::soa::multi_type_vector::push_back`.  Next up is column 2:
+:cpp:func:`~mdds::multi_type_vector::push_back`.  Next up is column 2::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: column-2
-   :end-before: //!code-end: column-2
-   :dedent: 4
+    // Fill column 2.
+    auto c2_values =
+    {
+        "Nissan", "Mercedes-Benz", "Nissan", "Suzuki", "Saab", "Subaru", "GMC", "Mercedes-Benz", "Toyota", "Nissan",
+        "Mazda", "Dodge", "Ford", "Bentley", "GMC", "Audi", "GMC", "Mercury", "Pontiac", "BMW",
+    };
+
+    std::for_each(c2_values.begin(), c2_values.end(), [&columns](const char* v) { columns[1].push_back<std::string>(v); });
 
 This is similar to the code for column 1, except that because we are using an
 array of string literals which implicitly becomes an initializer list of type
 ``const char*``, we need to explicitly specify the type for the
-:cpp:func:`~mdds::mtv::soa::multi_type_vector::push_back` call to be ``std::string``.
+:cpp:func:`~mdds::multi_type_vector::push_back` call to be ``std::string``.
 
-The code for column 3 is very similar to this:
+The code for column 3 is very similar to this::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: column-3
-   :end-before: //!code-end: column-3
-   :dedent: 4
+    // Fill column 3.
+    auto c3_values =
+    {
+        "Frontier", "W201", "Frontier", "Equator", "9-5", "Tribeca", "Yukon XL 2500", "E-Class", "Camry Hybrid", "Frontier",
+        "MX-5", "Ram Van 1500", "Edge", "Azure", "Sonoma Club Coupe", "S4", "3500 Club Coupe", "Villager", "Sunbird", "3 Series",
+    };
+
+    std::for_each(c3_values.begin(), c3_values.end(), [&columns](const char* v) { columns[2].push_back<std::string>(v); });
 
 Populating column 4 needs slight pre-processing.  We are inserting a string
 value of "unknown" in lieu of an integer value of -1.  Therefore the following
-code will do:
+code will do::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: column-4
-   :end-before: //!code-end: column-4
-   :dedent: 4
+    // Fill column 4.  Replace -1 with "unknown".
+    std::initializer_list<int32_t> c4_values =
+    {
+        1998, 1986, 2009, -1, -1, 2008, 2009, 2008, 2010, 2001,
+        2008, 2000, -1, 2009, 1998, 2013, 1994, 2000, 1990, 1993,
+    };
+
+    for (int32_t v : c4_values)
+    {
+        if (v < 0)
+            // Insert a string value "unknown".
+            columns[3].push_back<std::string>("unknown");
+        else
+            columns[3].push_back(v);
+    }
 
 Finally, the last column to fill, which uses the same logic as for columns 2
-and 3:
+and 3::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: column-5
-   :end-before: //!code-end: column-5
-   :dedent: 4
+    // Fill column 5
+    auto c5_values =
+    {
+        "Turquoise", "Fuscia", "Teal", "Fuscia", "Green", "Khaki", "Pink", "Goldenrod", "Turquoise", "Yellow",
+        "Orange", "Goldenrod", "Fuscia", "Goldenrod", "Mauv", "Crimson", "Turquoise", "Teal", "Indigo", "LKhaki",
+    };
+
+    std::for_each(c5_values.begin(), c5_values.end(), [&columns](const char* v) { columns[4].push_back<std::string>(v); });
 
 At this point, the content we've put into the ``columns`` variable roughly
 reflects the tabular data shown at the beginning of this section.  Now we can
-use the collection type we've declared earlier to wrap the columns:
+use the collection type we've declared earlier to wrap the columns::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: wrap
-   :end-before: //!code-end: wrap
-   :dedent: 4
+    // Wrap the columns with the 'collection'...
+    collection_type rows(columns.begin(), columns.end());
 
 We are naming this variable ``rows`` since what we are doing with this wrapper
 is to traverse the content of the tabular data in row-wise direction.  For
@@ -270,9 +431,9 @@ That being said, you must meet the following prerequisites when passing the
 collection of vector instances to the constructor of the
 :cpp:class:`~mdds::mtv::collection` class:
 
-1. All :cpp:type:`~mdds::multi_type_vector` instances that comprise the
+1. All :cpp:class:`~mdds::multi_type_vector` instances that comprise the
    collection must be of the same logical length i.e. their
-   :cpp:func:`~mdds::mtv::soa::multi_type_vector::size` methods must all return the same
+   :cpp:func:`~mdds::multi_type_vector::size` methods must all return the same
    value.
 2. The instances in the collection must be stored in the source container
    either as
@@ -291,24 +452,43 @@ Additionally, when using the :cpp:class:`~mdds::mtv::collection` class, you
 must ensure that the content of the vector instances that it references will
 not change for the duration of its use.
 
-Finally, here is the code that does the traversing:
+Finally, here is the code that does the traversing::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: traverse-row
-   :end-before: //!code-end: traverse-row
-   :dedent: 4
+    // Traverse the tabular data in row-wise direction.
+    for (const auto& cell : rows)
+    {
+        if (cell.index > 0)
+            // Insert a column separator before each cell except for the ones in the first column.
+            std::cout << " | ";
+
+        switch (cell.type)
+        {
+            // In this example, we use two element types only.
+            case mdds::mtv::element_type_int32:
+                std::cout << cell.get<mdds::mtv::int32_element_block>();
+                break;
+            case mdds::mtv::element_type_string:
+                std::cout << cell.get<mdds::mtv::string_element_block>();
+                break;
+            default:
+                std::cout << "???"; // The default case should not hit in this example.
+        }
+
+        if (cell.index == 4)
+            // We are in the last column. Insert a line break.
+            std::cout << std::endl;
+    }
 
 It's a simple for-loop, and in each iteration you get a single cell node that
 contains metadata about that cell including its value.  The node contains the
 following members:
 
 * ``type`` - an integer value representing the type of the value.
-* ``index`` -  a 0-based index of the :cpp:type:`~mdds::multi_type_vector`
+* ``index`` -  a 0-based index of the :cpp:class:`~mdds::multi_type_vector`
   instance within the collection.  You can think of this as column index in
   this example.
 * ``position`` - a 0-based logical element position within each
-  :cpp:type:`~mdds::multi_type_vector` instance.  You can think of this as
+  :cpp:class:`~mdds::multi_type_vector` instance.  You can think of this as
   row index in this example.
 
 In the current example we are only making use of the ``type`` and ``index``
@@ -355,21 +535,36 @@ row range, or perhaps both.
 
 Let's see how this works in the current example.  Here, we are going to limit
 the iteration range to only columns 2 and 3, and rows 2 through 11.  The following
-code will set this limit:
+code will set this limit::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: limit-range
-   :end-before: //!code-end: limit-range
-   :dedent: 4
+    rows.set_collection_range(1, 2); // only columns 2 and 3.
+    rows.set_element_range(1, 10);   // only rows 2 through 11.
 
-Then iterate through the collection once again:
+Then iterate through the collection once again::
 
-.. literalinclude:: ../example/mtv_collection.cpp
-   :language: C++
-   :start-after: //!code-start: traverse-row-range
-   :end-before: //!code-end: traverse-row-range
-   :dedent: 4
+    for (const auto& cell : rows)
+    {
+        if (cell.index > 1)
+            // Insert a column separator before each cell except for the ones in the first column.
+            std::cout << " | ";
+
+        switch (cell.type)
+        {
+            // In this example, we use two element types only.
+            case mdds::mtv::element_type_int32:
+                std::cout << cell.get<mdds::mtv::int32_element_block>();
+                break;
+            case mdds::mtv::element_type_string:
+                std::cout << cell.get<mdds::mtv::string_element_block>();
+                break;
+            default:
+                std::cout << "???"; // The default case should not hit in this example.
+        }
+
+        if (cell.index == 2)
+            // We are in the last column. Insert a line break.
+            std::cout << std::endl;
+    }
 
 This code is nearly identical to the previous one except for the index values
 used to control when to insert column separators and line breaks at the top
@@ -395,277 +590,87 @@ which clearly shows that your iteration range did indeed shrink as expected.
 Performance Considerations
 --------------------------
 
-Select SoA or AoS storage types
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use of position hint to avoid expensive block position lookup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you instantiate a multi_type_vector instance via
-:cpp:type:`mdds::multi_type_vector`, which is an alias type for
-:cpp:class:`mdds::mtv::soa::multi_type_vector`, you will be using the
-structure-of-arrays (SoA) variant of its implementation which is new in 2.0.
-Prior to 2.0, multi_type_vector used the array-of-structures (AoS) layout which
-is still available post 2.0 via :cpp:class:`mdds::mtv::aos::multi_type_vector`
-in case you need it.
+Consider the following example code::
 
-Note, however, that the SoA variant generally yields better overall performance
-since it can make more efficient use of CPU caches.  It is therefore highly
-recommended that you stick with the SoA variant unless you have a specific
-reason not to.
+    using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func>;
 
-Also note that both variants are API compatibile with each other.
+    size_t size = 50000;
 
+    // Initialize the container with one empty block of size 50000.
+    mtv_type db(size);
 
-Use of position hints to avoid the cost of block position lookup
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Set non-empty value at every other logical position from top down.
+    for (size_t i = 0; i < size; ++i)
+    {
+        if (i % 2)
+            db.set<double>(i, 1.0);
+    }
 
-Consider the following example code:
-
-.. literalinclude:: ../example/multi_type_vector_pos_hint.cpp
-   :language: C++
-   :start-after: //!code-start: no-pos-hint
-   :end-before: //!code-end: no-pos-hint
-   :dedent: 4
-
-which, when executed, may take quite sometime to complete especially when you
-are using an older version of mdds.  This particular example exposes one
-weakness that multi_type_vector has; because it needs to first look up the
-position of the block to operate with, and that lookup *always* starts from the
-first block, the time it takes to find the correct block increases as the number
-of blocks goes up.  This example demonstrates the worst case scenario of such
-lookup complexity since it always inserts the next value at the last block
-position.
+which, when executed, takes quite sometime to complete.  This particular example
+exposes one weakness that multi_type_vector has; because it needs to first
+look up the position of the block to operate with, and that lookup *always*
+starts from the first block, the time it takes to find the correct block
+increases as the number of blocks goes up.  This example demonstrates the
+worst case scenario of such lookup complexity since it always inserts the next
+value at the last block position.
 
 Fortunately, there is a simple solution to this which the following code
-demonstrates:
+demonstrates::
 
-.. literalinclude:: ../example/multi_type_vector_pos_hint.cpp
-   :language: C++
-   :start-after: //!code-start: pos-hint
-   :end-before: //!code-end: pos-hint
-   :dedent: 4
+    using mtv_type = mdds::multi_type_vector<mdds::mtv::element_block_func>;
+
+    size_t size = 50000;
+
+    // Initialize the container with one empty block of size 50000.
+    mtv_type db(size);
+    mtv_type::iterator pos = db.begin();
+
+    // Set non-empty value at every other logical position from top down.
+    for (size_t i = 0; i < size; ++i)
+    {
+        if (i % 2)
+            // Pass the position hint as the first argument, and receive a new
+            // one returned from the method for the next call.
+            pos = db.set<double>(pos, i, 1.0);
+    }
 
 Compiling and executing this code should take only a fraction of a second.
 
 The only difference between the second example and the first one is that the
-second one uses an interator as a position hint to keep track of the position of
-the last modified block.  Each
-:cpp:func:`~mdds::mtv::soa::multi_type_vector::set` method call returns an
-iterator which can then be passed to the next
-:cpp:func:`~mdds::mtv::soa::multi_type_vector::set` call as the position hint.
-Because an iterator object internally stores the location of the block the value
-was inserted to, this lets the method to start the block position lookup process
-from the last modified block, which in this example is always one block behind
-the one the new value needs to go.  Using the big-O notation, the use of the
-position hint essentially turns the complexity of O(n^2) in the first example
-into O(1) in the second one if you are using an older version of mdds where the
-block position lookup had a linear complexity.
+second one uses an interator as a position hint to keep track of the position
+of the last modified block.  Each :cpp:func:`~mdds::multi_type_vector::set`
+method call returns an iterator which can then be passed to the next
+:cpp:func:`~mdds::multi_type_vector::set` call as the position hint.
+Because an iterator object internally stores the location of the block the
+value was inserted to, this lets the method to start the block position lookup
+process from the last modified block, which in this example is always one
+block behind the one the new value needs to go.  Using the big-O notation, the
+use of the position hint essentially turns the complexity of O(n^2) in the
+first example into O(1) in the second one.
 
-This strategy should work with any methods in :cpp:type:`~mdds::multi_type_vector`
+This strategy should work with any methods in :cpp:class:`~mdds::multi_type_vector`
 that take a position hint as the first argument.
 
-Note that, if you are using a more recent version of mdds (1.6.0 or newer), the
-cost of block position lookup is significantly lessoned thanks to the switch to
-binary search in performing the lookup.
-
-.. note::
-
-   If you are using mdds 1.6.0 or newer, the cost of block position lookup is
-   much less significant even without the use of position hints. But the benefit
-   of using position hints may still be there.  It's always a good idea to profile
-   your specific use case and decide whether the use of position hints is worth
-   it.
-
-One important thing to note is that, as a user, you must ensure that the position
-hint you pass stays valid between the calls.  A position hint becomes invalid when
-the content of the container changes.  A good strategy to maintain a valid position
-hint is to always receive the iterator returned from the mutator method you called
-to which you passed the previous position hint, which is what the code above does.
-Passing an invalid position hint to a method that takes one may result in invalid
-memory access or otherwise in some sort of undefined behavior.
-
-.. warning::
-
-   You must ensure that the position hint you pass stays valid. Passing an invalid
-   position hint to a method that takes one may result in invalid memory access
-   or otherwise in some sort of undefined behavior.
-
-
-Block shifting performance and loop-unrolling factor
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The introduction of binary search in the block position lookup implementation
-in version 1.6 has significantly improved its lookup performance, but has
-also resulted in slight performance hit when shifting blocks during value
-insertion.  This is because when shifting the logical positions of the blocks
-below the insertion point, their head positions need to be re-calculated to
-account for their new positions.
-
-The good news is that the switch to the structure-of-arrays (SoA) storage
-layout in 2.0 alone may bring subtle but measurable improvement in the
-block position adjustment performance due to the logical block positions now
-being stored in a separate array thereby improving its cache efficiency.  In
-reality, however, this was somewhat dependent on the CPU types since some CPU's
-didn't show any noticeable improvements or even showed worse performance, while
-other CPU types showed consistent improvements with SoA over AoS.
-
-Another factor that may play a role is `loop unrolling <https://en.wikipedia.org/wiki/Loop_unrolling>`_
-factor which can be configured via the :cpp:var:`~mdds::mtv::default_trait::loop_unrolling`
-variable in your custom trait type if you use version 2.0 or newer.  This variable
-is an enum class of type :cpp:type:`mdds::mtv::lu_factor_t` which enumerates
-several pre-defined loop-unrolling factors as well as some SIMD features.
-
-The hardest part is to figure out which loop unrolling factor is the best option
-in your runtime environment, since it is highly dependent on the environment.
-Luckily mdds comes with a tool called `runtime-env <https://gitlab.com/mdds/mdds/-/tree/master/tools/runtime-env>`_
-which, when run, will perform some benchmarks and give you the best loop-unrolling
-factor in your runtime environment.  Be sure to build this tool with the same
-compiler and compiler flags as your target program in order for this tool to give
-you a representative answer.
-
-
-Debugging
----------
-
-Tracing of public methods
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When using :cpp:class:`~mdds::mtv::soa::multi_type_vector` to handle a series
-of data reads and writes in an non-trivial code base, sometimes you may find
-yourself needing to track which methods are getting called when following a
-certain code path during a debugging session.  In such a situation, you can enable
-an optional trace method which gets called whenever a public method of :cpp:class:`~mdds::mtv::soa::multi_type_vector`
-is called.
-
-First, you need to define a preprocessor macro named
-``MDDS_MULTI_TYPE_VECTOR_DEBUG`` before including the header for
-:cpp:class:`~mdds::mtv::soa::multi_type_vector`:
-
-.. literalinclude:: ../example/multi_type_vector_debug_trace.cpp
-   :language: C++
-   :start-after: //!code-start: header
-   :end-before: //!code-end: header
-
-to enable additional debug code.  In this example the value of the macro is
-set to 1, but it doesn't matter what the value of the macro is, as long as it
-is defined.  You can also define one as a compiler option as well.
-
-Once defined, the next step is to add a ``trace`` method as a static function to
-the trait type you pass as a template argument of multi_type_vector:
-
-.. literalinclude:: ../example/multi_type_vector_debug_trace.cpp
-   :language: C++
-   :start-after: //!code-start: types
-   :end-before: //!code-end: types
-
-Here, we are simply inheriting our trait type from the
-:cpp:class:`~mdds::mtv::default_trait` type and simply adding a static ``trace``
-function to it, and passing this trait type to the mtv_type definition below.
-This trace function must take one argument of type
-:cpp:class:`mdds::mtv::trace_method_properties_t` which includes various
-properties of the traced call.  In this example, we are simply printing the
-properties named
-:cpp:member:`~mdds::mtv::trace_method_properties_t::function_name` and
-:cpp:member:`~mdds::mtv::trace_method_properties_t::function_args` each time a
-traced method is called.  Both of these properties are printable string types.
-
-Note that this ``trace`` function is entirely optional; the code will compile
-fine even when it's not defined.  Also, it must be declared as static for it to
-be called.
-
-Let's instantiate an object of ``mtv_type``, call some of its methods and see
-what happens.  When executing the following code:
-
-.. literalinclude:: ../example/multi_type_vector_debug_trace.cpp
-   :language: C++
-   :start-after: //!code-start: main
-   :end-before: //!code-end: main
-   :dedent: 4
-
-You will see the following output:
-
-.. code-block:: text
-
-    function:
-      name: multi_type_vector
-      args: init_size=10
-    function:
-      name: set
-      args: pos=0; value=? (type=5)
-    function:
-      name: set
-      args: pos=2; value=? (type=1)
-    function:
-      name: set
-      args: pos=4; value=? (type=3)
-    function:
-      name: ~multi_type_vector
-      args:
-
-The :cpp:member:`~mdds::mtv::trace_method_properties_t::function_name`
-property is hopefully self-explanatory.  The
-:cpp:member:`~mdds::mtv::trace_method_properties_t::function_args` property is
-a single string value containing the information about the function's
-arguments and optionally their values if their values are known to be
-printable.  If the value of an argument cannot be printed, ``?`` is placed
-instead.  For some argument types, an additional information is displayed e.g.
-``(type=5)`` in the above output which indicates that the type of the value
-being passed to the function is :cpp:var:`~mdds::mtv::element_type_int32`.
-
-If you want to limit your tracing to a specific function type or types, you
-can make use of the :cpp:member:`~mdds::mtv::trace_method_properties_t::type`
-property which specifies the type of the traced method.  Likewise, if you want
-to only trace methods of a certain instance, use
-:cpp:member:`~mdds::mtv::trace_method_properties_t::instance` to filter the
-incoming trace calls based on the memory addresses of the instances whose
-methods are being traced.
-
-Note that this feature is available for version 2.0.2 and newer, and currently
-only available for the SoA variant of :cpp:class:`~mdds::mtv::soa::multi_type_vector`.
-
-.. note::
-
-   This feature is only available for version 2.0.2 and newer, and only for the
-   SoA variant.
 
 API Reference
 -------------
 
-Core
-^^^^
-
-mdds::multi_type_vector
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygentypedef:: mdds::multi_type_vector
-
-mdds::mtv::soa::multi_type_vector
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenclass:: mdds::mtv::soa::multi_type_vector
+.. doxygenstruct:: mdds::detail::mtv::event_func
    :members:
 
-mdds::mtv::aos::multi_type_vector
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenclass:: mdds::mtv::aos::multi_type_vector
+.. doxygenclass:: mdds::multi_type_vector
    :members:
 
-mdds::mtv::empty_event_func
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenstruct:: mdds::mtv::empty_event_func
+.. doxygenclass:: mdds::mtv::collection
    :members:
-
-mdds::mtv::default_trait
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenstruct:: mdds::mtv::default_trait
-   :members:
-
 
 Element Blocks
 ^^^^^^^^^^^^^^
 
-.. doxygenclass:: mdds::mtv::base_element_block
+.. doxygenstruct:: mdds::mtv::base_element_block
    :members:
 
 .. doxygenclass:: mdds::mtv::element_block
@@ -689,12 +694,8 @@ Element Blocks
 .. doxygenstruct:: mdds::mtv::element_block_func
    :members:
 
-
-Types
-^^^^^
-
-mdds::mtv::element_t
-~~~~~~~~~~~~~~~~~~~~
+Element Types
+^^^^^^^^^^^^^
 
 .. doxygentypedef:: mdds::mtv::element_t
 
@@ -713,30 +714,7 @@ mdds::mtv::element_t
 .. doxygenvariable:: mdds::mtv::element_type_string
 .. doxygenvariable:: mdds::mtv::element_type_user_start
 
-mdds::mtv::lu_factor_t
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenenum:: mdds::mtv::lu_factor_t
-
-mdds::mtv::trace_method_t
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenenum:: mdds::mtv::trace_method_t
-
-mdds::mtv::trace_method_properties_t
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenstruct:: mdds::mtv::trace_method_properties_t
-
-
 Exceptions
 ^^^^^^^^^^
 
 .. doxygenclass:: mdds::mtv::element_block_error
-
-
-Collection
-^^^^^^^^^^
-
-.. doxygenclass:: mdds::mtv::collection
-   :members:

@@ -87,13 +87,14 @@ public:
     size_type size() const;
 
 private:
+
     const entry* m_entries;
     value_type m_null_value;
     size_type m_entry_size;
     const entry* m_entry_end;
 };
 
-} // namespace mdds
+}
 
 #include "sorted_string_map_def.inl"
 

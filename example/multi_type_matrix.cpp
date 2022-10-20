@@ -31,7 +31,7 @@
 
 typedef mdds::multi_type_matrix<mdds::mtm::std_string_trait> mtm_type;
 
-int main() try
+int main()
 {
     // Create a 3x3 matrix with empty elements.
     mtm_type mx(3, 3);
@@ -50,10 +50,6 @@ int main() try
     mx.set(0, 0, values.begin(), values.end());
 
     return EXIT_SUCCESS;
-}
-catch (...)
-{
-    return EXIT_FAILURE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

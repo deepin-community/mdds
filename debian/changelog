@@ -1,33 +1,3 @@
-mdds (2.0.3-1) unstable; urgency=medium
-
-  * New upstream version 2.0.3
-
- -- Rene Engelhard <rene@debian.org>  Wed, 11 May 2022 18:01:37 +0200
-
-mdds (2.0.2-1) unstable; urgency=medium
-
-  * New upstream version 2.0.2
-
- -- Rene Engelhard <rene@debian.org>  Fri, 18 Feb 2022 08:37:45 +0100
-
-mdds (2.0.1-1) unstable; urgency=medium
-
-  * New upstream version 2.0.1
-
- -- Rene Engelhard <rene@debian.org>  Tue, 14 Dec 2021 07:05:18 +0100
-
-mdds (2.0.0-2) unstable; urgency=medium
-
-  * upload to unstable 
-
- -- Rene Engelhard <rene@debian.org>  Wed, 08 Dec 2021 19:37:20 +0100
-
-mdds (2.0.0-1) experimental; urgency=medium
-
-  * New upstream version 2.0.0
-
- -- Rene Engelhard <rene@debian.org>  Tue, 02 Nov 2021 06:55:27 +0100
-
 mdds (1.7.0-1) unstable; urgency=medium
 
   * New upstream release

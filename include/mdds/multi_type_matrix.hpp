@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (c) 2012-2021 Kohei Yoshida
+ * Copyright (c) 2012-2018 Kohei Yoshida
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -46,9 +46,9 @@ namespace mtm {
  */
 enum element_t
 {
-    element_empty = mdds::mtv::element_type_empty,
+    element_empty   = mdds::mtv::element_type_empty,
     element_boolean = mdds::mtv::element_type_boolean,
-    element_string = mdds::mtv::element_type_string,
+    element_string  = mdds::mtv::element_type_string,
     element_numeric = mdds::mtv::element_type_double,
     element_integer = mdds::mtv::element_type_int32
 };
@@ -64,7 +64,7 @@ struct std_string_trait
     typedef mdds::mtv::element_block_func element_block_func;
 };
 
-} // namespace mtm
+}
 
 /**
  * Matrix that can store numeric, integer, boolean, empty and string types.
@@ -79,14 +79,13 @@ template<typename _MtxTrait>
 class multi_type_matrix
 {
     typedef _MtxTrait matrix_trait;
-
 public:
     typedef typename matrix_trait::string_element_block string_block_type;
     typedef typename matrix_trait::integer_element_block integer_block_type;
 
     typedef typename string_block_type::value_type string_type;
     typedef typename integer_block_type::value_type integer_type;
-    typedef size_t size_type;
+    typedef size_t      size_type;
 
 private:
     typedef mdds::multi_type_vector<typename matrix_trait::element_block_func> store_type;
@@ -104,30 +103,22 @@ public:
     {
         size_type row;
         size_type column;
-        size_pair_type() : row(0), column(0)
-        {}
-        size_pair_type(size_type _row, size_type _column) : row(_row), column(_column)
-        {}
+        size_pair_type() : row(0), column(0) {}
+        size_pair_type(size_type _row, size_type _column) : row(_row), column(_column) {}
         size_pair_type(std::initializer_list<size_type> vs)
         {
             if (vs.size() != 2)
                 throw invalid_arg_error("size_pair_type requires exactly 2 elements.");
 
-            size_type* ptrs[2] = {&row, &column};
+            size_type* ptrs[2] = { &row, &column };
             size_type** p = ptrs;
 
             for (size_type v : vs)
                 **p++ = v;
         }
 
-        bool operator==(const size_pair_type& r) const
-        {
-            return row == r.row && column == r.column;
-        }
-        bool operator!=(const size_pair_type& r) const
-        {
-            return !operator==(r);
-        }
+        bool operator== (const size_pair_type& r) const { return row == r.row && column == r.column; }
+        bool operator!= (const size_pair_type& r) const { return !operator== (r); }
     };
 
     struct element_block_node_type
@@ -175,10 +166,9 @@ private:
     struct walk_func
     {
         _Func& m_func;
-        walk_func(_Func& func) : m_func(func)
-        {}
+        walk_func(_Func& func) : m_func(func) {}
 
-        void operator()(const typename store_type::const_iterator::value_type& mtv_node)
+        void operator() (const typename store_type::const_iterator::value_type& mtv_node)
         {
             element_block_node_type mtm_node;
             mtm_node.type = to_mtm_type(mtv_node.type);
@@ -260,10 +250,10 @@ public:
      */
     ~multi_type_matrix();
 
-    bool operator==(const multi_type_matrix& other) const;
-    bool operator!=(const multi_type_matrix& other) const;
+    bool operator== (const multi_type_matrix& other) const;
+    bool operator!= (const multi_type_matrix& other) const;
 
-    multi_type_matrix& operator=(const multi_type_matrix& r);
+    multi_type_matrix& operator= (const multi_type_matrix& r);
 
     /**
      * Get a mutable reference of an element (position object) at specified
@@ -561,7 +551,7 @@ public:
      *
      * @param row row index of the element.
      * @param col column index of the element.
-     * @param str new value to set.
+     * @param val new value to set.
      */
     void set(size_type row, size_type col, const string_type& str);
 
@@ -569,7 +559,7 @@ public:
      * Set a string value to an element at specified position.
      *
      * @param pos position of the element to update.
-     * @param str new value to set.
+     * @param val new value to set.
      *
      * @return position of the element block where the new value has been set.
      */
@@ -797,8 +787,9 @@ public:
      *          those of the start position.
      */
     template<typename _Func>
-    _Func walk(
-        _Func func, const multi_type_matrix& right, const size_pair_type& start, const size_pair_type& end) const;
+    _Func walk(_Func func, const multi_type_matrix& right,
+        const size_pair_type& start, const size_pair_type& end) const;
+
 
 #ifdef MDDS_MULTI_TYPE_MATRIX_DEBUG
     void dump() const
@@ -808,6 +799,7 @@ public:
 #endif
 
 private:
+
     /**
      * Get an array position of the data referenced by the row and column
      * indices.  The array consists of multiple columns, the content of column
@@ -833,7 +825,7 @@ private:
     size_pair_type m_size;
 };
 
-} // namespace mdds
+}
 
 #include "multi_type_matrix_def.inl"
 

@@ -26,10 +26,10 @@ void test_sorted_string_map();
 void test_trie_map();
 
 void stop()
-{}
+{
+}
 
 int main()
-try
 {
     test_flat_segment_tree();
     test_multi_type_matrix();
@@ -39,11 +39,6 @@ try
     test_segment_tree();
     test_sorted_string_map();
     test_trie_map();
-    return 0;
-}
-catch (...)
-{
-    return -1;
 }
 
 // vim: set shiftwidth=4 softtabstop=4 expandtab:

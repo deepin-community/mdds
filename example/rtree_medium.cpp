@@ -45,7 +45,7 @@ struct tiny_trait_2d
 
 using rt_type = mdds::rtree<int, int, tiny_trait_2d>;
 
-int main() try
+int main()
 {
     // 2D rectangle with the top-left position (x, y), width and height.
     struct rect
@@ -104,10 +104,6 @@ int main() try
     fout << tree_svg;
 
     return EXIT_SUCCESS;
-}
-catch (...)
-{
-    return EXIT_FAILURE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

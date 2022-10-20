@@ -31,7 +31,7 @@
 #include <string>
 #include <iostream>
 
-int main() try
+int main()
 {
     using rt_type = mdds::rtree<int, std::string>;
 
@@ -69,10 +69,6 @@ int main() try
         std::cout << v << std::endl;
 
     return EXIT_SUCCESS;
-}
-catch (...)
-{
-    return EXIT_FAILURE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */
