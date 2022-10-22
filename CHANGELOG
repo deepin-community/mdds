@@ -1,3 +1,69 @@
+mdds 2.0.3
+
+  * general
+
+    * defined clang-format rules, and globally applied them to all active
+      source files.
+
+  * multi_type_vector
+
+    * revised the block position lookup implementation to avoid using the
+      internal STL iterators.  The new implementation should be able to handle
+      invalid position hints more gracefully without potential process
+      termination.
+
+mdds 2.0.2
+
+* multi_type_vector
+
+  * added optional trace function that gets called on every called public
+    method.
+
+mdds 2.0.1
+
+* general
+
+  * addressed various coverity issues.
+
+* multi_type_vector
+
+  * fixed random compiler warnings.
+
+  * fixed event handling in copy construction.  In aos, the event object was
+    not copied when the parent container was copied.  In soa, the
+    element_block_acquired() callback was not called for the cloned element
+    blocks.
+
+  * added move constructors and move assignment operators to both aos and soa
+    variants.
+
+mdds 2.0.0
+
+* general
+
+  * set the baseline C++ version to C++17.
+
+* multi_type_vector
+
+  * implemented structure-of-arrays (SoA) storage as its default storage
+    layout for better CPU cache efficiency.
+
+  * added multiple block position adjustment implementations with various
+    loop-unrolling factors combined with SSE2 and AVX2 features.
+
+  * added a tool called runtime-env to benchmark different block position
+    adjustment implementations to determine the optimal loop-unrolling factor.
+
+* rectangle_set
+
+  * permanently removed.
+
+* rtree
+
+  * fixed a bug where the memory positions of invalidated child nodes were not
+    properly updated after tree mutation.  The problem manifested itself when
+    using libc++ as stdlib with clang.
+
 mdds 1.7.0
 
 * trie_map
@@ -5,7 +71,7 @@ mdds 1.7.0
   * added copy and move constructors.
 
   * added a variant of find() method that returns a mutable iterator object.
-    The user can now update the value associated with the key directly via the
+    The user can now update the value associated with a key directly via the
     iterator object.
 
 * packed_trie_map

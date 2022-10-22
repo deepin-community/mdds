@@ -1,30 +1,33 @@
-AC_INIT(mdds, 1.7.0, kohei.yoshida@gmail.com)
+AC_INIT(mdds, 2.0.3, kohei.yoshida@gmail.com)
 AM_INIT_AUTOMAKE([foreign dist-bzip2 dist-xz subdir-objects])
 AM_MAINTAINER_MODE
 
 VERSION=AC_PACKAGE_VERSION
-API_VERSION=1.5
+API_VERSION=2.0
 
 AC_SUBST(VERSION)
 AC_SUBST(API_VERSION)
+AC_CONFIG_MACRO_DIRS([m4])
 
 PACKAGE_TARNAME=AC_PACKAGE_TARNAME
 AC_SUBST(PACKAGE_TARNAME)
 
 OBJDIR=obj
-SRCDIR=src
 INCDIR=include
 MISCDIR=misc
 QUICKCHECKDIR=quickcheck
 AC_SUBST(OBJDIR)
-AC_SUBST(SRCDIR)
 AC_SUBST(INCDIR)
 AC_SUBST(MISCDIR)
 AC_SUBST(QUICKCHECKDIR)
 
-CPPFLAGS="$CPPFLAGS -Wall -g -pedantic-errors"
+AX_CXX_COMPILE_STDCXX_17([noext], [mandatory])
+
+CPPFLAGS="$CPPFLAGS -Wall -Wshadow -g -pedantic-errors"
 CPPFLAGS="$CPPFLAGS -I/usr/include -I/usr/local/include"
-CXXFLAGS="$CXXFLAGS -Wshadow -std=c++11"
+
+AC_CHECK_SIZEOF([void *])
+CXXFLAGS="$CXXFLAGS -DSIZEOF_VOID_P=$ac_cv_sizeof_void_p"
 
 AC_ARG_ENABLE(debug-stdcxx,
 [
@@ -65,8 +68,8 @@ AS_IF([test x"$enable_gcov" == "xyes"], [
 ])
 
 AC_ARG_ENABLE(openmp,
-    AS_HELP_STRING([--disable-openmp], [Disable use of OpenMP.]),
-    [enable_openmp="$enableval"],[enable_openmp=yes]
+    AS_HELP_STRING([--enable-openmp], [Enable use of OpenMP.]),
+    [enable_openmp="$enableval"],[enable_openmp=no]
 )
 
 AS_IF([test x"$enable_openmp" == "xyes"], [
@@ -134,25 +137,39 @@ Makefile
 include/Makefile
 include/mdds/Makefile
 include/mdds/multi_type_vector/Makefile
+include/mdds/multi_type_vector/aos/Makefile
+include/mdds/multi_type_vector/soa/Makefile
 example/Makefile
 test/Makefile
 test/gdb/Makefile
 test/gdb/src/Makefile
-flat_segment_tree_test_mem.mem:src/test.mem.in
+test/multi_type_vector/Makefile
+test/multi_type_vector/custom-trait/Makefile
+test/multi_type_vector/custom-trait/aos/Makefile
+test/multi_type_vector/custom-trait/soa/Makefile
+test/multi_type_vector/debug-util/Makefile
+test/multi_type_vector/debug-util/soa/Makefile
+tools/Makefile
+tools/runtime-env/Makefile
+flat_segment_tree_test_mem.mem:test/test.mem.in
 misc/mdds-$API_VERSION.pc:misc/mdds.pc.in
-multi_type_matrix_test_mem.mem:src/test.mem.in
-multi_type_matrix_test_walk_mem.mem:src/test.mem.in
-multi_type_vector_test_event_mem.mem:src/test.mem.in
-multi_type_vector_test_custom_mem.mem:src/test.mem.in
-multi_type_vector_test_default_mem.mem:src/test.mem.in
-multi_type_vector_test_collection_mem.mem:src/test.mem.in
-point_quad_tree_test_mem.mem:src/test.mem.in
-rectangle_set_test_mem.mem:src/test.mem.in
-segment_tree_test_mem.mem:src/test.mem.in
-sorted_string_map_test_mem.mem:src/test.mem.in
-trie_map_test_mem.mem:src/test.mem.in
-rtree_test_mem.mem:src/test.mem.in
-rtree_test_bulkload_mem.mem:src/test.mem.in
+multi_type_matrix_test_mem.mem:test/test.mem.in
+multi_type_matrix_test_walk_mem.mem:test/test.mem.in
+multi_type_vector_test_event_aos_mem.mem:test/test.mem.in
+multi_type_vector_test_event_soa_mem.mem:test/test.mem.in
+multi_type_vector_test_custom_aos_mem.mem:test/test.mem.in
+multi_type_vector_test_custom_soa_mem.mem:test/test.mem.in
+multi_type_vector_test_default_aos_mem.mem:test/test.mem.in
+multi_type_vector_test_default_soa_mem.mem:test/test.mem.in
+multi_type_vector_test_collection_aos_mem.mem:test/test.mem.in
+multi_type_vector_test_collection_soa_mem.mem:test/test.mem.in
+point_quad_tree_test_mem.mem:test/test.mem.in
+rectangle_set_test_mem.mem:test/test.mem.in
+segment_tree_test_mem.mem:test/test.mem.in
+sorted_string_map_test_mem.mem:test/test.mem.in
+trie_map_test_mem.mem:test/test.mem.in
+rtree_test_mem.mem:test/test.mem.in
+rtree_test_bulkload_mem.mem:test/test.mem.in
 ])
 AC_OUTPUT
 

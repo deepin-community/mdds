@@ -30,7 +30,8 @@
 #include <fstream>
 #include <mdds/trie_map.hpp>
 
-using namespace std;
+using std::cout;
+using std::endl;
 
 enum affiliated_party_t : uint8_t
 {
@@ -97,7 +98,7 @@ struct us_president_serializer
         os.write(buf.buffer, 1);
     }
 
-    static void read(std::istream& is, size_t n, us_president& v)
+    static void read(std::istream& is, size_t /*n*/, us_president& v)
     {
         // For a fixed-size value type, this should equal the defined value size.
         assert(n == 3);
@@ -114,7 +115,7 @@ struct us_president_serializer
     }
 };
 
-int main()
+int main() try
 {
 
     using map_type = mdds::packed_trie_map<mdds::trie::std_string_trait, us_president>;
@@ -178,18 +179,20 @@ int main()
     cout << endl;
 
     {
-        std::ofstream outfile("us-presidents.bin", ios::binary);
+        std::ofstream outfile("us-presidents.bin", std::ios::binary);
         us_presidents.save_state<us_president_serializer>(outfile);
     }
 
     map_type us_presidents_loaded;
 
     {
-        std::ifstream infile("us-presidents.bin", ios::binary);
+        std::ifstream infile("us-presidents.bin", std::ios::binary);
         us_presidents_loaded.load_state<us_president_serializer>(infile);
     }
 
+    std::ios_base::fmtflags origflags = cout.flags();
     cout << "Equal to the original? " << std::boolalpha << (us_presidents == us_presidents_loaded) << endl;
+    cout.setf(origflags);
 
     cout << endl;
 
@@ -199,6 +202,10 @@ int main()
         cout << "  * " << entry.first << " (" << entry.second.year << "; " << entry.second.party << ")" << endl;
 
     return EXIT_SUCCESS;
+}
+catch (...)
+{
+    return EXIT_FAILURE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */
