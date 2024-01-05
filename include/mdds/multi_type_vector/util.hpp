@@ -29,13 +29,11 @@
 #ifndef INCLUDED_MDDS_MULTI_TYPE_VECTOR_DIR_UTIL_HPP
 #define INCLUDED_MDDS_MULTI_TYPE_VECTOR_DIR_UTIL_HPP
 
-#include "./types.hpp"
+#include "./block_funcs.hpp"
 
 #include <sstream>
 
-namespace mdds {
-
-namespace mtv {
+namespace mdds { namespace mtv {
 
 /**
  * Empty event function handler structure, used when no custom function
@@ -73,7 +71,7 @@ struct empty_event_func
 /**
  * Default trait to be used when no custom trait is specified.
  */
-struct default_trait
+struct default_traits
 {
     /**
      * Class or struct type that contains callback functions for element block
@@ -86,11 +84,19 @@ struct default_trait
      * position adjustment function.  This must be a const expression.
      */
     static constexpr lu_factor_t loop_unrolling = lu_factor_t::lu16;
+
+    /**
+     * Type that contains block functions used throughout the multi_type_vector
+     * implementation.  The user must overwrite this type to specify one or more
+     * block types as template arguments to element_block_funcs.  Alternatively,
+     * you may be interested in using standard_element_blocks_traits which
+     * already supports the pre-defined block types for the optional standard
+     * data types.
+     */
+    using block_funcs = element_block_funcs<>;
 };
 
-} // namespace mtv
-
-namespace detail { namespace mtv {
+namespace detail {
 
 #ifdef MDDS_MULTI_TYPE_VECTOR_DEBUG
 
@@ -104,7 +110,7 @@ struct has_trace<T, decltype((void)T::trace)> : std::true_type
 {
 };
 
-template<typename Trait>
+template<typename Traits>
 struct call_trace
 {
     int& call_depth;
@@ -127,12 +133,12 @@ struct call_trace
     {
         // In case of recursive calls, only trace the first encountered method.
         if (call_depth <= 1)
-            Trait::trace(props);
+            Traits::trace(props);
     }
 
     void operator()(const ::mdds::mtv::trace_method_properties_t& props) const
     {
-        call(has_trace<Trait>{}, props);
+        call(has_trace<Traits>{}, props);
     }
 };
 
@@ -226,37 +232,18 @@ T advance_position(const T& pos, int steps)
     return ret;
 }
 
-template<typename _Blk>
-inline typename _Blk::value_type get_block_element_at(const mdds::mtv::base_element_block& data, size_t offset)
-{
-    return _Blk::at(data, offset);
-}
+} // namespace detail
 
-#ifndef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-
-template<>
-inline bool get_block_element_at<mdds::mtv::boolean_element_block>(
-    const mdds::mtv::base_element_block& data, size_t offset)
-{
-    auto it = mdds::mtv::boolean_element_block::cbegin(data);
-    std::advance(it, offset);
-    return *it;
-}
-
-#endif
-
-}} // namespace detail::mtv
-
-} // namespace mdds
+}} // namespace mdds::mtv
 
 #ifdef MDDS_MULTI_TYPE_VECTOR_DEBUG
 
 #define MDDS_MTV_TRACE(method_type) \
-    ::mdds::detail::mtv::call_trace<Trait> mdds_mtv_ct(m_trace_call_depth); \
+    ::mdds::mtv::detail::call_trace<Traits> mdds_mtv_ct(m_trace_call_depth); \
     mdds_mtv_ct({trace_method_t::method_type, this, __func__, "", __FILE__, __LINE__})
 
 #define MDDS_MTV_TRACE_ARGS(method_type, stream) \
-    ::mdds::detail::mtv::call_trace<Trait> mdds_mtv_ct(m_trace_call_depth); \
+    ::mdds::mtv::detail::call_trace<Traits> mdds_mtv_ct(m_trace_call_depth); \
     do \
     { \
         std::ostringstream _os_; \

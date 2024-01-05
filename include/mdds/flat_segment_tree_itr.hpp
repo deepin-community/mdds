@@ -1,6 +1,6 @@
 /*************************************************************************
  *
- * Copyright (c) 2010-2017 Kohei Yoshida
+ * Copyright (c) 2010-2023 Kohei Yoshida
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,15 +28,15 @@
 #ifndef INCLUDED_MDDS_FLAT_SEGMENT_TREE_ITR_HPP
 #define INCLUDED_MDDS_FLAT_SEGMENT_TREE_ITR_HPP
 
-namespace mdds { namespace __fst {
+namespace mdds { namespace fst { namespace detail {
 
 /**
  * Handler for forward iterator
  */
-template<typename _FstType>
-struct itr_forward_handler
+template<typename FstType>
+struct forward_itr_handler
 {
-    typedef _FstType fst_type;
+    using fst_type = FstType;
 
     static const typename fst_type::node* init_pos(const fst_type* _db, bool _end)
     {
@@ -63,10 +63,10 @@ struct itr_forward_handler
 /**
  * Handler for reverse iterator
  */
-template<typename _FstType>
-struct itr_reverse_handler
+template<typename FstType>
+struct reverse_itr_handler
 {
-    typedef _FstType fst_type;
+    using fst_type = FstType;
 
     static const typename fst_type::node* init_pos(const fst_type* _db, bool _end)
     {
@@ -90,13 +90,13 @@ struct itr_reverse_handler
     }
 };
 
-template<typename _FstType, typename _Hdl>
+template<typename FstType, typename Hdl>
 class const_iterator_base
 {
-    typedef _Hdl handler_type;
+    typedef Hdl handler_type;
 
 public:
-    typedef _FstType fst_type;
+    typedef FstType fst_type;
 
     // iterator traits
     typedef ::std::pair<typename fst_type::key_type, typename fst_type::value_type> value_type;
@@ -170,9 +170,15 @@ protected:
     {
         return m_pos;
     }
+
     const fst_type* get_parent() const
     {
         return m_db;
+    }
+
+    bool is_end_pos() const
+    {
+        return m_end_pos;
     }
 
 private:
@@ -188,10 +194,10 @@ private:
     bool m_end_pos;
 };
 
-template<typename _FstType>
+template<typename FstType>
 class const_segment_iterator
 {
-    typedef _FstType fst_type;
+    typedef FstType fst_type;
     friend fst_type;
 
     const_segment_iterator(const typename fst_type::node* start, const typename fst_type::node* end)
@@ -209,6 +215,21 @@ public:
 
         value_type() : start(), end(), value()
         {}
+
+        value_type(
+            typename fst_type::key_type _start, typename fst_type::key_type _end, typename fst_type::value_type _value)
+            : start(std::move(_start)), end(std::move(_end)), value(std::move(_value))
+        {}
+
+        bool operator==(const value_type& other) const
+        {
+            return start == other.start && end == other.end && value == other.value;
+        }
+
+        bool operator!=(const value_type& other) const
+        {
+            return !operator==(other);
+        }
     };
 
     const_segment_iterator() : m_start(nullptr), m_end(nullptr)
@@ -322,6 +343,6 @@ private:
     value_type m_node;
 };
 
-}} // namespace mdds::__fst
+}}} // namespace mdds::fst::detail
 
 #endif

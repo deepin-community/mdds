@@ -125,8 +125,7 @@ public:
     {}
 };
 
-template<bool B>
-using bool_constant = std::integral_constant<bool, B>;
+namespace detail {
 
 template<typename T>
 class has_value_type
@@ -159,7 +158,25 @@ struct const_or_not<T, std::false_type>
 };
 
 template<typename T, bool Const>
-using const_t = typename const_or_not<T, bool_constant<Const>>::type;
+using const_t = typename const_or_not<T, std::bool_constant<Const>>::type;
+
+template<typename T, typename Mutable>
+struct mutable_or_not;
+
+template<typename T>
+struct mutable_or_not<T, std::true_type>
+{
+    using type = T;
+};
+
+template<typename T>
+struct mutable_or_not<T, std::false_type>
+{
+    using type = typename std::add_const<T>::type;
+};
+
+template<typename T, bool Mutable>
+using mutable_t = typename mutable_or_not<T, std::bool_constant<Mutable>>::type;
 
 template<typename T, typename IsConst>
 struct get_iterator_type;
@@ -181,6 +198,18 @@ constexpr bool invalid_static_int()
 {
     return false;
 }
+
+template<typename T, typename = void>
+struct is_complete : std::false_type
+{
+};
+
+template<typename T>
+struct is_complete<T, std::void_t<decltype(sizeof(T) != 0)>> : std::true_type
+{
+};
+
+} // namespace detail
 
 } // namespace mdds
 

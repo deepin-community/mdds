@@ -35,7 +35,6 @@
 #endif
 
 #include "multi_type_vector.hpp"
-#include "multi_type_vector_trait.hpp"
 
 namespace mdds {
 
@@ -56,12 +55,10 @@ enum element_t
 /**
  * Default matrix trait that uses std::string as its string type.
  */
-struct std_string_trait
+struct std_string_traits
 {
     typedef mdds::mtv::int32_element_block integer_element_block;
     typedef mdds::mtv::string_element_block string_element_block;
-
-    typedef mdds::mtv::element_block_func element_block_func;
 };
 
 } // namespace mtm
@@ -70,26 +67,33 @@ struct std_string_trait
  * Matrix that can store numeric, integer, boolean, empty and string types.
  * The string and integer types can be specified in the matrix trait
  * template parameter. To use std::string as the string type and int as the
- * integer type, use mdds::mtm::std_string_trait.
+ * integer type, use mdds::mtm::std_string_traits.
  *
  * Internally it uses mdds::multi_type_vector as its value store.  The
  * element values are linearly stored in column-major order.
  */
-template<typename _MtxTrait>
+template<typename Traits>
 class multi_type_matrix
 {
-    typedef _MtxTrait matrix_trait;
+    typedef Traits traits_type;
 
 public:
-    typedef typename matrix_trait::string_element_block string_block_type;
-    typedef typename matrix_trait::integer_element_block integer_block_type;
+    typedef typename traits_type::string_element_block string_block_type;
+    typedef typename traits_type::integer_element_block integer_block_type;
 
     typedef typename string_block_type::value_type string_type;
     typedef typename integer_block_type::value_type integer_type;
     typedef size_t size_type;
 
 private:
-    typedef mdds::multi_type_vector<typename matrix_trait::element_block_func> store_type;
+    struct mtv_trait : public mdds::mtv::default_traits
+    {
+        using block_funcs = mdds::mtv::element_block_funcs<
+            mdds::mtv::boolean_element_block, mdds::mtv::int8_element_block, mdds::mtv::double_element_block,
+            typename traits_type::string_element_block, typename traits_type::integer_element_block>;
+    };
+
+    using store_type = mdds::multi_type_vector<mtv_trait>;
 
 public:
     typedef typename store_type::position_type position_type;
@@ -171,11 +175,11 @@ public:
     }
 
 private:
-    template<typename _Func>
+    template<typename FuncT>
     struct walk_func
     {
-        _Func& m_func;
-        walk_func(_Func& func) : m_func(func)
+        FuncT& m_func;
+        walk_func(FuncT& func) : m_func(func)
         {}
 
         void operator()(const typename store_type::const_iterator::value_type& mtv_node)
@@ -743,8 +747,8 @@ public:
      *
      * @return function object passed to this method.
      */
-    template<typename _Func>
-    _Func walk(_Func func) const;
+    template<typename FuncT>
+    FuncT walk(FuncT func) const;
 
     /**
      * Walk through the element blocks in a sub-matrix range defined by start
@@ -762,8 +766,8 @@ public:
      *
      * @return function object passed to this method.
      */
-    template<typename _Func>
-    _Func walk(_Func func, const size_pair_type& start, const size_pair_type& end) const;
+    template<typename FuncT>
+    FuncT walk(FuncT func, const size_pair_type& start, const size_pair_type& end) const;
 
     /**
      * Walk through all element blocks in parallel with another matrix
@@ -775,8 +779,8 @@ public:
      *
      * @param right another matrix instance to parallel-walk with.
      */
-    template<typename _Func>
-    _Func walk(_Func func, const multi_type_matrix& right) const;
+    template<typename FuncT>
+    FuncT walk(FuncT func, const multi_type_matrix& right) const;
 
     /**
      * Walk through the element blocks in a sub-matrix range in parallel with
@@ -796,9 +800,9 @@ public:
      *          sub-matrix.  Both column and row must be greater or equal to
      *          those of the start position.
      */
-    template<typename _Func>
-    _Func walk(
-        _Func func, const multi_type_matrix& right, const size_pair_type& start, const size_pair_type& end) const;
+    template<typename FuncT>
+    FuncT walk(
+        FuncT func, const multi_type_matrix& right, const size_pair_type& start, const size_pair_type& end) const;
 
 #ifdef MDDS_MULTI_TYPE_MATRIX_DEBUG
     void dump() const

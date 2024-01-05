@@ -34,12 +34,12 @@ struct event_handler : public mdds::mtv::empty_event_func
     {}
 };
 
-struct trait : public mdds::mtv::default_trait
+struct trait : public mdds::mtv::default_traits
 {
     using event_func = event_handler;
 };
 
-using mtv_type = mtv_template_type<mdds::mtv::element_block_func, trait>;
+using mtv_type = mtv_template_type<trait>;
 
 void mtv_test_swap()
 {

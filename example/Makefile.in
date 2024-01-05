@@ -86,24 +86,14 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 EXTRA_PROGRAMS = flat-segment-tree$(EXEEXT) \
-	flat-segment-tree-itrs$(EXEEXT) mtv-collection$(EXEEXT) \
-	multi-type-matrix$(EXEEXT) multi-type-vector$(EXEEXT) \
-	multi-type-vector-debug-trace$(EXEEXT) \
-	multi-type-vector-element-block1$(EXEEXT) \
-	multi-type-vector-event1$(EXEEXT) \
-	multi-type-vector-pos-hint$(EXEEXT) packed-trie-map$(EXEEXT) \
-	packed-trie-state-custom$(EXEEXT) \
+	flat-segment-tree-itrs$(EXEEXT) multi-type-matrix$(EXEEXT) \
+	packed-trie-map$(EXEEXT) packed-trie-state-custom$(EXEEXT) \
 	packed-trie-state-int$(EXEEXT) point-quad-tree$(EXEEXT) \
 	segment-tree$(EXEEXT) trie-map$(EXEEXT) rtree-simple$(EXEEXT) \
 	rtree-erase$(EXEEXT) rtree-medium$(EXEEXT) \
 	rtree-medium-bulkload$(EXEEXT)
 TESTS = flat-segment-tree$(EXEEXT) flat-segment-tree-itrs$(EXEEXT) \
-	mtv-collection$(EXEEXT) multi-type-matrix$(EXEEXT) \
-	multi-type-vector$(EXEEXT) \
-	multi-type-vector-debug-trace$(EXEEXT) \
-	multi-type-vector-element-block1$(EXEEXT) \
-	multi-type-vector-event1$(EXEEXT) \
-	multi-type-vector-pos-hint$(EXEEXT) packed-trie-map$(EXEEXT) \
+	multi-type-matrix$(EXEEXT) packed-trie-map$(EXEEXT) \
 	packed-trie-state-custom$(EXEEXT) \
 	packed-trie-state-int$(EXEEXT) point-quad-tree$(EXEEXT) \
 	segment-tree$(EXEEXT) trie-map$(EXEEXT) rtree-simple$(EXEEXT) \
@@ -113,6 +103,7 @@ subdir = example
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/m4/ax_cxx_compile_stdcxx_17.m4 \
+	$(top_srcdir)/m4/m4_ax_valgrind_check.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -126,35 +117,9 @@ flat_segment_tree_LDADD = $(LDADD)
 am_flat_segment_tree_itrs_OBJECTS = flat_segment_tree_itrs.$(OBJEXT)
 flat_segment_tree_itrs_OBJECTS = $(am_flat_segment_tree_itrs_OBJECTS)
 flat_segment_tree_itrs_LDADD = $(LDADD)
-am_mtv_collection_OBJECTS = mtv_collection.$(OBJEXT)
-mtv_collection_OBJECTS = $(am_mtv_collection_OBJECTS)
-mtv_collection_LDADD = $(LDADD)
 am_multi_type_matrix_OBJECTS = multi_type_matrix.$(OBJEXT)
 multi_type_matrix_OBJECTS = $(am_multi_type_matrix_OBJECTS)
 multi_type_matrix_LDADD = $(LDADD)
-am_multi_type_vector_OBJECTS = multi_type_vector.$(OBJEXT)
-multi_type_vector_OBJECTS = $(am_multi_type_vector_OBJECTS)
-multi_type_vector_LDADD = $(LDADD)
-am_multi_type_vector_debug_trace_OBJECTS =  \
-	multi_type_vector_debug_trace.$(OBJEXT)
-multi_type_vector_debug_trace_OBJECTS =  \
-	$(am_multi_type_vector_debug_trace_OBJECTS)
-multi_type_vector_debug_trace_LDADD = $(LDADD)
-am_multi_type_vector_element_block1_OBJECTS =  \
-	multi_type_vector_element_block1.$(OBJEXT)
-multi_type_vector_element_block1_OBJECTS =  \
-	$(am_multi_type_vector_element_block1_OBJECTS)
-multi_type_vector_element_block1_LDADD = $(LDADD)
-am_multi_type_vector_event1_OBJECTS =  \
-	multi_type_vector_event1.$(OBJEXT)
-multi_type_vector_event1_OBJECTS =  \
-	$(am_multi_type_vector_event1_OBJECTS)
-multi_type_vector_event1_LDADD = $(LDADD)
-am_multi_type_vector_pos_hint_OBJECTS =  \
-	multi_type_vector_pos_hint.$(OBJEXT)
-multi_type_vector_pos_hint_OBJECTS =  \
-	$(am_multi_type_vector_pos_hint_OBJECTS)
-multi_type_vector_pos_hint_LDADD = $(LDADD)
 am_packed_trie_map_OBJECTS = packed_trie_map.$(OBJEXT)
 packed_trie_map_OBJECTS = $(am_packed_trie_map_OBJECTS)
 packed_trie_map_LDADD = $(LDADD)
@@ -204,12 +169,7 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/flat_segment_tree.Po \
 	./$(DEPDIR)/flat_segment_tree_itrs.Po \
-	./$(DEPDIR)/mtv_collection.Po ./$(DEPDIR)/multi_type_matrix.Po \
-	./$(DEPDIR)/multi_type_vector.Po \
-	./$(DEPDIR)/multi_type_vector_debug_trace.Po \
-	./$(DEPDIR)/multi_type_vector_element_block1.Po \
-	./$(DEPDIR)/multi_type_vector_event1.Po \
-	./$(DEPDIR)/multi_type_vector_pos_hint.Po \
+	./$(DEPDIR)/multi_type_matrix.Po \
 	./$(DEPDIR)/packed_trie_map.Po \
 	./$(DEPDIR)/packed_trie_state_custom.Po \
 	./$(DEPDIR)/packed_trie_state_int.Po \
@@ -233,34 +193,44 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(flat_segment_tree_SOURCES) \
-	$(flat_segment_tree_itrs_SOURCES) $(mtv_collection_SOURCES) \
-	$(multi_type_matrix_SOURCES) $(multi_type_vector_SOURCES) \
-	$(multi_type_vector_debug_trace_SOURCES) \
-	$(multi_type_vector_element_block1_SOURCES) \
-	$(multi_type_vector_event1_SOURCES) \
-	$(multi_type_vector_pos_hint_SOURCES) \
+	$(flat_segment_tree_itrs_SOURCES) $(multi_type_matrix_SOURCES) \
 	$(packed_trie_map_SOURCES) $(packed_trie_state_custom_SOURCES) \
 	$(packed_trie_state_int_SOURCES) $(point_quad_tree_SOURCES) \
 	$(rtree_erase_SOURCES) $(rtree_medium_SOURCES) \
 	$(rtree_medium_bulkload_SOURCES) $(rtree_simple_SOURCES) \
 	$(segment_tree_SOURCES) $(trie_map_SOURCES)
 DIST_SOURCES = $(flat_segment_tree_SOURCES) \
-	$(flat_segment_tree_itrs_SOURCES) $(mtv_collection_SOURCES) \
-	$(multi_type_matrix_SOURCES) $(multi_type_vector_SOURCES) \
-	$(multi_type_vector_debug_trace_SOURCES) \
-	$(multi_type_vector_element_block1_SOURCES) \
-	$(multi_type_vector_event1_SOURCES) \
-	$(multi_type_vector_pos_hint_SOURCES) \
+	$(flat_segment_tree_itrs_SOURCES) $(multi_type_matrix_SOURCES) \
 	$(packed_trie_map_SOURCES) $(packed_trie_state_custom_SOURCES) \
 	$(packed_trie_state_int_SOURCES) $(point_quad_tree_SOURCES) \
 	$(rtree_erase_SOURCES) $(rtree_medium_SOURCES) \
 	$(rtree_medium_bulkload_SOURCES) $(rtree_simple_SOURCES) \
 	$(segment_tree_SOURCES) $(trie_map_SOURCES)
+RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
+	ctags-recursive dvi-recursive html-recursive info-recursive \
+	install-data-recursive install-dvi-recursive \
+	install-exec-recursive install-html-recursive \
+	install-info-recursive install-pdf-recursive \
+	install-ps-recursive install-recursive installcheck-recursive \
+	installdirs-recursive pdf-recursive ps-recursive \
+	tags-recursive uninstall-recursive
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
+  distclean-recursive maintainer-clean-recursive
+am__recursive_targets = \
+  $(RECURSIVE_TARGETS) \
+  $(RECURSIVE_CLEAN_TARGETS) \
+  $(am__extra_recursive_targets)
+AM_RECURSIVE_TARGETS = $(am__recursive_targets:-recursive=) TAGS CTAGS \
+	check recheck distdir distdir-am
+am__extra_recursive_targets = check-valgrind-recursive \
+	check-valgrind-memcheck-recursive \
+	check-valgrind-helgrind-recursive check-valgrind-drd-recursive \
+	check-valgrind-sgcheck-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -462,7 +432,6 @@ am__set_TESTS_bases = \
   bases=`echo $$bases`
 AM_TESTSUITE_SUMMARY_HEADER = ' for $(PACKAGE_STRING)'
 RECHECK_LOGS = $(TEST_LOGS)
-AM_RECURSIVE_TARGETS = check recheck
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
 LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
@@ -483,9 +452,35 @@ TEST_LOGS = $(am__test_logs2:.test.log=.log)
 TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
+DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp \
 	$(top_srcdir)/test-driver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+am__relativize = \
+  dir0=`pwd`; \
+  sed_first='s,^\([^/]*\)/.*$$,\1,'; \
+  sed_rest='s,^[^/]*/*,,'; \
+  sed_last='s,^.*/\([^/]*\)$$,\1,'; \
+  sed_butlast='s,/*[^/]*$$,,'; \
+  while test -n "$$dir1"; do \
+    first=`echo "$$dir1" | sed -e "$$sed_first"`; \
+    if test "$$first" != "."; then \
+      if test "$$first" = ".."; then \
+        dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
+        dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
+      else \
+        first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
+        if test "$$first2" = "$$first"; then \
+          dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
+        else \
+          dir2="../$$dir2"; \
+        fi; \
+        dir0="$$dir0"/"$$first"; \
+      fi; \
+    fi; \
+    dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
+  done; \
+  reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
@@ -512,6 +507,10 @@ DOXYGEN = @DOXYGEN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
+ENABLE_VALGRIND_drd = @ENABLE_VALGRIND_drd@
+ENABLE_VALGRIND_helgrind = @ENABLE_VALGRIND_helgrind@
+ENABLE_VALGRIND_memcheck = @ENABLE_VALGRIND_memcheck@
+ENABLE_VALGRIND_sgcheck = @ENABLE_VALGRIND_sgcheck@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 EXPECT = @EXPECT@
@@ -548,6 +547,7 @@ SHELL = @SHELL@
 SPHINX = @SPHINX@
 STRIP = @STRIP@
 VALGRIND = @VALGRIND@
+VALGRIND_ENABLED = @VALGRIND_ENABLED@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -593,16 +593,13 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+valgrind_enabled_tools = @valgrind_enabled_tools@
+valgrind_tools = @valgrind_tools@
+SUBDIRS = multi_type_vector
 AM_CPPFLAGS = -I$(top_srcdir)/include -DNDEBUG
 flat_segment_tree_SOURCES = flat_segment_tree.cpp
 flat_segment_tree_itrs_SOURCES = flat_segment_tree_itrs.cpp
-mtv_collection_SOURCES = mtv_collection.cpp
 multi_type_matrix_SOURCES = multi_type_matrix.cpp
-multi_type_vector_SOURCES = multi_type_vector.cpp
-multi_type_vector_debug_trace_SOURCES = multi_type_vector_debug_trace.cpp
-multi_type_vector_element_block1_SOURCES = multi_type_vector_element_block1.cpp
-multi_type_vector_event1_SOURCES = multi_type_vector_event1.cpp
-multi_type_vector_pos_hint_SOURCES = multi_type_vector_pos_hint.cpp
 packed_trie_map_SOURCES = packed_trie_map.cpp
 packed_trie_state_custom_SOURCES = packed_trie_state_custom.cpp
 packed_trie_state_int_SOURCES = packed_trie_state_int.cpp
@@ -618,7 +615,7 @@ TEST_ARTIFACTS = \
 	us-presidents.bin \
 	cities.bin
 
-all: all-am
+all: all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .cpp .log .o .obj .test .test$(EXEEXT) .trs
@@ -660,33 +657,9 @@ flat-segment-tree-itrs$(EXEEXT): $(flat_segment_tree_itrs_OBJECTS) $(flat_segmen
 	@rm -f flat-segment-tree-itrs$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(flat_segment_tree_itrs_OBJECTS) $(flat_segment_tree_itrs_LDADD) $(LIBS)
 
-mtv-collection$(EXEEXT): $(mtv_collection_OBJECTS) $(mtv_collection_DEPENDENCIES) $(EXTRA_mtv_collection_DEPENDENCIES) 
-	@rm -f mtv-collection$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(mtv_collection_OBJECTS) $(mtv_collection_LDADD) $(LIBS)
-
 multi-type-matrix$(EXEEXT): $(multi_type_matrix_OBJECTS) $(multi_type_matrix_DEPENDENCIES) $(EXTRA_multi_type_matrix_DEPENDENCIES) 
 	@rm -f multi-type-matrix$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(multi_type_matrix_OBJECTS) $(multi_type_matrix_LDADD) $(LIBS)
-
-multi-type-vector$(EXEEXT): $(multi_type_vector_OBJECTS) $(multi_type_vector_DEPENDENCIES) $(EXTRA_multi_type_vector_DEPENDENCIES) 
-	@rm -f multi-type-vector$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(multi_type_vector_OBJECTS) $(multi_type_vector_LDADD) $(LIBS)
-
-multi-type-vector-debug-trace$(EXEEXT): $(multi_type_vector_debug_trace_OBJECTS) $(multi_type_vector_debug_trace_DEPENDENCIES) $(EXTRA_multi_type_vector_debug_trace_DEPENDENCIES) 
-	@rm -f multi-type-vector-debug-trace$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(multi_type_vector_debug_trace_OBJECTS) $(multi_type_vector_debug_trace_LDADD) $(LIBS)
-
-multi-type-vector-element-block1$(EXEEXT): $(multi_type_vector_element_block1_OBJECTS) $(multi_type_vector_element_block1_DEPENDENCIES) $(EXTRA_multi_type_vector_element_block1_DEPENDENCIES) 
-	@rm -f multi-type-vector-element-block1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(multi_type_vector_element_block1_OBJECTS) $(multi_type_vector_element_block1_LDADD) $(LIBS)
-
-multi-type-vector-event1$(EXEEXT): $(multi_type_vector_event1_OBJECTS) $(multi_type_vector_event1_DEPENDENCIES) $(EXTRA_multi_type_vector_event1_DEPENDENCIES) 
-	@rm -f multi-type-vector-event1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(multi_type_vector_event1_OBJECTS) $(multi_type_vector_event1_LDADD) $(LIBS)
-
-multi-type-vector-pos-hint$(EXEEXT): $(multi_type_vector_pos_hint_OBJECTS) $(multi_type_vector_pos_hint_DEPENDENCIES) $(EXTRA_multi_type_vector_pos_hint_DEPENDENCIES) 
-	@rm -f multi-type-vector-pos-hint$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(multi_type_vector_pos_hint_OBJECTS) $(multi_type_vector_pos_hint_LDADD) $(LIBS)
 
 packed-trie-map$(EXEEXT): $(packed_trie_map_OBJECTS) $(packed_trie_map_DEPENDENCIES) $(EXTRA_packed_trie_map_DEPENDENCIES) 
 	@rm -f packed-trie-map$(EXEEXT)
@@ -736,13 +709,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flat_segment_tree.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flat_segment_tree_itrs.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mtv_collection.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multi_type_matrix.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multi_type_vector.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multi_type_vector_debug_trace.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multi_type_vector_element_block1.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multi_type_vector_event1.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multi_type_vector_pos_hint.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packed_trie_map.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packed_trie_state_custom.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packed_trie_state_int.Po@am__quote@ # am--include-marker
@@ -776,14 +743,66 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run 'make' without going through this Makefile.
+# To change the values of 'make' variables: instead of editing Makefiles,
+# (1) if the variable is set in 'config.status', edit 'config.status'
+#     (which will cause the Makefiles to be regenerated when you run 'make');
+# (2) otherwise, pass the desired values on the 'make' command line.
+$(am__recursive_targets):
+	@fail=; \
+	if $(am__make_keepgoing); then \
+	  failcom='fail=yes'; \
+	else \
+	  failcom='exit 1'; \
+	fi; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+check-valgrind-local: 
+check-valgrind-memcheck-local: 
+check-valgrind-helgrind-local: 
+check-valgrind-drd-local: 
+check-valgrind-sgcheck-local: 
+
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
-tags: tags-am
+tags: tags-recursive
 TAGS: tags
 
 tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 	set x; \
 	here=`pwd`; \
+	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
+	  include_option=--etags-include; \
+	  empty_fix=.; \
+	else \
+	  include_option=--include; \
+	  empty_fix=; \
+	fi; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test ! -f $$subdir/TAGS || \
+	      set "$$@" "$$include_option=$$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
 	$(am__define_uniq_tagged_files); \
 	shift; \
 	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
@@ -796,7 +815,7 @@ tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 	      $$unique; \
 	  fi; \
 	fi
-ctags: ctags-am
+ctags: ctags-recursive
 
 CTAGS: ctags
 ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
@@ -809,7 +828,7 @@ GTAGS:
 	here=`$(am__cd) $(top_builddir) && pwd` \
 	  && $(am__cd) $(top_srcdir) \
 	  && gtags -i $(GTAGS_ARGS) "$$here"
-cscopelist: cscopelist-am
+cscopelist: cscopelist-recursive
 
 cscopelist-am: $(am__tagged_files)
 	list='$(am__tagged_files)'; \
@@ -983,51 +1002,9 @@ flat-segment-tree-itrs.log: flat-segment-tree-itrs$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-mtv-collection.log: mtv-collection$(EXEEXT)
-	@p='mtv-collection$(EXEEXT)'; \
-	b='mtv-collection'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 multi-type-matrix.log: multi-type-matrix$(EXEEXT)
 	@p='multi-type-matrix$(EXEEXT)'; \
 	b='multi-type-matrix'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-multi-type-vector.log: multi-type-vector$(EXEEXT)
-	@p='multi-type-vector$(EXEEXT)'; \
-	b='multi-type-vector'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-multi-type-vector-debug-trace.log: multi-type-vector-debug-trace$(EXEEXT)
-	@p='multi-type-vector-debug-trace$(EXEEXT)'; \
-	b='multi-type-vector-debug-trace'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-multi-type-vector-element-block1.log: multi-type-vector-element-block1$(EXEEXT)
-	@p='multi-type-vector-element-block1$(EXEEXT)'; \
-	b='multi-type-vector-element-block1'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-multi-type-vector-event1.log: multi-type-vector-event1$(EXEEXT)
-	@p='multi-type-vector-event1$(EXEEXT)'; \
-	b='multi-type-vector-event1'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-multi-type-vector-pos-hint.log: multi-type-vector-pos-hint$(EXEEXT)
-	@p='multi-type-vector-pos-hint$(EXEEXT)'; \
-	b='multi-type-vector-pos-hint'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1149,20 +1126,46 @@ distdir-am: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    $(am__make_dryrun) \
+	      || test -d "$(distdir)/$$subdir" \
+	      || $(MKDIR_P) "$(distdir)/$$subdir" \
+	      || exit 1; \
+	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
+	    $(am__relativize); \
+	    new_distdir=$$reldir; \
+	    dir1=$$subdir; dir2="$(top_distdir)"; \
+	    $(am__relativize); \
+	    new_top_distdir=$$reldir; \
+	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
+	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
+	    ($(am__cd) $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$$new_top_distdir" \
+	        distdir="$$new_distdir" \
+		am__remove_distdir=: \
+		am__skip_length_check=: \
+		am__skip_mode_fix=: \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
-check: check-am
+check: check-recursive
 all-am: Makefile
-installdirs:
-install: install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+installdirs: installdirs-recursive
+installdirs-am:
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	if test -z '$(STRIP)'; then \
 	  $(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
@@ -1187,20 +1190,34 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-am
+check-valgrind: check-valgrind-recursive
 
-clean-am: clean-generic mostlyclean-am
+check-valgrind-am: check-valgrind-local
 
-distclean: distclean-am
+check-valgrind-drd: check-valgrind-drd-recursive
+
+check-valgrind-drd-am: check-valgrind-drd-local
+
+check-valgrind-helgrind: check-valgrind-helgrind-recursive
+
+check-valgrind-helgrind-am: check-valgrind-helgrind-local
+
+check-valgrind-memcheck: check-valgrind-memcheck-recursive
+
+check-valgrind-memcheck-am: check-valgrind-memcheck-local
+
+check-valgrind-sgcheck: check-valgrind-sgcheck-recursive
+
+check-valgrind-sgcheck-am: check-valgrind-sgcheck-local
+
+clean: clean-recursive
+
+clean-am: clean-generic clean-local mostlyclean-am
+
+distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/flat_segment_tree.Po
 	-rm -f ./$(DEPDIR)/flat_segment_tree_itrs.Po
-	-rm -f ./$(DEPDIR)/mtv_collection.Po
 	-rm -f ./$(DEPDIR)/multi_type_matrix.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector_debug_trace.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector_element_block1.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector_event1.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector_pos_hint.Po
 	-rm -f ./$(DEPDIR)/packed_trie_map.Po
 	-rm -f ./$(DEPDIR)/packed_trie_state_custom.Po
 	-rm -f ./$(DEPDIR)/packed_trie_state_int.Po
@@ -1213,58 +1230,52 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/trie_map.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-local distclean-tags
+	distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-html: html-am
+html: html-recursive
 
 html-am:
 
-info: info-am
+info: info-recursive
 
 info-am:
 
 install-data-am:
 
-install-dvi: install-dvi-am
+install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
 install-exec-am:
 
-install-html: install-html-am
+install-html: install-html-recursive
 
 install-html-am:
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-info-am:
 
 install-man:
 
-install-pdf: install-pdf-am
+install-pdf: install-pdf-recursive
 
 install-pdf-am:
 
-install-ps: install-ps-am
+install-ps: install-ps-recursive
 
 install-ps-am:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
+maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/flat_segment_tree.Po
 	-rm -f ./$(DEPDIR)/flat_segment_tree_itrs.Po
-	-rm -f ./$(DEPDIR)/mtv_collection.Po
 	-rm -f ./$(DEPDIR)/multi_type_matrix.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector_debug_trace.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector_element_block1.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector_event1.Po
-	-rm -f ./$(DEPDIR)/multi_type_vector_pos_hint.Po
 	-rm -f ./$(DEPDIR)/packed_trie_map.Po
 	-rm -f ./$(DEPDIR)/packed_trie_state_custom.Po
 	-rm -f ./$(DEPDIR)/packed_trie_state_int.Po
@@ -1278,39 +1289,45 @@ maintainer-clean: maintainer-clean-am
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-am
+pdf: pdf-recursive
 
 pdf-am:
 
-ps: ps-am
+ps: ps-recursive
 
 ps-am:
 
 uninstall-am:
 
-.MAKE: check-am install-am install-strip
+.MAKE: $(am__recursive_targets) check-am install-am install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-TESTS \
-	check-am clean clean-generic cscopelist-am ctags ctags-am \
-	distclean distclean-compile distclean-generic distclean-local \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am
+.PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
+	am--depfiles check check-TESTS check-am check-valgrind-am \
+	check-valgrind-drd-am check-valgrind-drd-local \
+	check-valgrind-helgrind-am check-valgrind-helgrind-local \
+	check-valgrind-local check-valgrind-memcheck-am \
+	check-valgrind-memcheck-local check-valgrind-sgcheck-am \
+	check-valgrind-sgcheck-local clean clean-generic clean-local \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am recheck tags tags-am \
+	uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
 
-distclean-local:
+clean-local:
 	rm -f $(TESTS) $(TEST_ARTIFACTS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

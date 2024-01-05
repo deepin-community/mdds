@@ -1,9 +1,9 @@
-AC_INIT(mdds, 2.0.3, kohei.yoshida@gmail.com)
+AC_INIT(mdds, 2.1.1, kohei.yoshida@gmail.com)
 AM_INIT_AUTOMAKE([foreign dist-bzip2 dist-xz subdir-objects])
 AM_MAINTAINER_MODE
 
 VERSION=AC_PACKAGE_VERSION
-API_VERSION=2.0
+API_VERSION=2.1
 
 AC_SUBST(VERSION)
 AC_SUBST(API_VERSION)
@@ -35,7 +35,7 @@ AC_ARG_ENABLE(debug-stdcxx,
 ]
 ,debug_stdcxx=yes)
 
-AS_IF([test x"$debug_stdcxx" == "xyes"], [
+AS_IF([test x"$debug_stdcxx" = "xyes"], [
   CXXFLAGS="$CXXFLAGS -D_GLIBCXX_DEBUG"
 ])
 
@@ -45,7 +45,7 @@ AC_ARG_ENABLE(release-tests,
 ]
 ,release_tests=yes)
 
-AS_IF([test x"$release_tests" == "xyes"], [
+AS_IF([test x"$release_tests" = "xyes"], [
   CXXFLAGS="$CXXFLAGS -DNDEBUG -O2"
 ])
 
@@ -59,11 +59,11 @@ AC_ARG_ENABLE(loop-unrolling,
     [enable_loop_unrolling="$enableval"],[enable_loop_unrolling=yes]
 )
 
-AS_IF([test x"$enable_loop_unrolling" == "xno"], [
+AS_IF([test x"$enable_loop_unrolling" = "xno"], [
   CXXFLAGS="$CXXFLAGS -DMDDS_LOOP_UNROLLING=0"
 ])
 
-AS_IF([test x"$enable_gcov" == "xyes"], [
+AS_IF([test x"$enable_gcov" = "xyes"], [
   CXXFLAGS="$CXXFLAGS --coverage -O0"
 ])
 
@@ -72,7 +72,7 @@ AC_ARG_ENABLE(openmp,
     [enable_openmp="$enableval"],[enable_openmp=no]
 )
 
-AS_IF([test x"$enable_openmp" == "xyes"], [
+AS_IF([test x"$enable_openmp" = "xyes"], [
   CXXFLAGS="$CXXFLAGS -fopenmp -DMDDS_USE_OPENMP=1"
   LDFLAGS="$LDFLAGS -fopenmp"
 ])
@@ -82,7 +82,7 @@ AC_ARG_ENABLE(sanitizer-coverage,
     [enable_sanitizer_coverage="$enableval"],[enable_sanitizer_coverage=no]
 )
 
-AS_IF([test x"$enable_sanitizer_coverage" == "xyes"], [
+AS_IF([test x"$enable_sanitizer_coverage" = "xyes"], [
   CXXFLAGS="$CXXFLAGS -fprofile-instr-generate -fcoverage-mapping -O0"
 ])
 
@@ -93,17 +93,6 @@ AC_PROG_CXX
 AC_PATH_PROG([GDB], [gdb])
 AC_PATH_PROG([EXPECT], [expect])
 AC_PATH_PROG([RUNTEST_BIN], [runtest])
-
-AC_ARG_ENABLE([memory-tests],
-  [AS_HELP_STRING([--enable-memory-tests], [Run memory tests.])],
-  [enable_memory_tests=$enableval],
-  [enable_memory_tests=no]
-)
-AS_IF([test "$enable_memory_tests" = yes],
-  [AC_PATH_PROG([VALGRIND], [valgrind])]
-  AS_IF([test -z "$VALGRIND"], [AC_MSG_ERROR([valgrind not found])])
-)
-AM_CONDITIONAL([RUN_MEMORY_TESTS], [test "$enable_memory_tests" = yes])
 
 AC_ARG_ENABLE([docs],
   [AS_HELP_STRING([--enable-docs], [Generate docs during build.])],
@@ -125,12 +114,14 @@ AC_ARG_ENABLE([werror],
 	[enable_werror="$enableval"],
 	[enable_werror=no]
 )
-AS_IF([test x"$enable_werror" == "xyes"], [
+AS_IF([test x"$enable_werror" = "xyes"], [
 	CXXFLAGS="$CXXFLAGS -Werror"
 ])
 
 CXXFLAGS_UNITTESTS="-DMDDS_DEBUG_NODE_BASE -DMDDS_UNIT_TEST"
 AC_SUBST(CXXFLAGS_UNITTESTS)
+
+AX_VALGRIND_CHECK()
 
 AC_CONFIG_FILES([
 Makefile
@@ -140,36 +131,45 @@ include/mdds/multi_type_vector/Makefile
 include/mdds/multi_type_vector/aos/Makefile
 include/mdds/multi_type_vector/soa/Makefile
 example/Makefile
+example/multi_type_vector/Makefile
 test/Makefile
 test/gdb/Makefile
 test/gdb/src/Makefile
+test/flat_segment_tree/Makefile
+test/include/Makefile
+test/multi_type_matrix/Makefile
 test/multi_type_vector/Makefile
+test/multi_type_vector/collection/Makefile
+test/multi_type_vector/collection/aos/Makefile
+test/multi_type_vector/collection/soa/Makefile
+test/multi_type_vector/collection/tc/Makefile
+test/multi_type_vector/custom/Makefile
+test/multi_type_vector/custom/aos/Makefile
+test/multi_type_vector/custom/soa/Makefile
+test/multi_type_vector/custom/tc/Makefile
 test/multi_type_vector/custom-trait/Makefile
 test/multi_type_vector/custom-trait/aos/Makefile
 test/multi_type_vector/custom-trait/soa/Makefile
 test/multi_type_vector/debug-util/Makefile
 test/multi_type_vector/debug-util/soa/Makefile
+test/multi_type_vector/default/Makefile
+test/multi_type_vector/default/aos/Makefile
+test/multi_type_vector/default/soa/Makefile
+test/multi_type_vector/default/tc/Makefile
+test/multi_type_vector/element-blocks/Makefile
+test/multi_type_vector/event/Makefile
+test/multi_type_vector/event/aos/Makefile
+test/multi_type_vector/event/soa/Makefile
+test/multi_type_vector/event/tc/Makefile
+test/multi_type_vector/perf/Makefile
+test/point_quad_tree/Makefile
+test/rtree/Makefile
+test/segment_tree/Makefile
+test/sorted_string_map/Makefile
+test/trie_map/Makefile
 tools/Makefile
 tools/runtime-env/Makefile
-flat_segment_tree_test_mem.mem:test/test.mem.in
 misc/mdds-$API_VERSION.pc:misc/mdds.pc.in
-multi_type_matrix_test_mem.mem:test/test.mem.in
-multi_type_matrix_test_walk_mem.mem:test/test.mem.in
-multi_type_vector_test_event_aos_mem.mem:test/test.mem.in
-multi_type_vector_test_event_soa_mem.mem:test/test.mem.in
-multi_type_vector_test_custom_aos_mem.mem:test/test.mem.in
-multi_type_vector_test_custom_soa_mem.mem:test/test.mem.in
-multi_type_vector_test_default_aos_mem.mem:test/test.mem.in
-multi_type_vector_test_default_soa_mem.mem:test/test.mem.in
-multi_type_vector_test_collection_aos_mem.mem:test/test.mem.in
-multi_type_vector_test_collection_soa_mem.mem:test/test.mem.in
-point_quad_tree_test_mem.mem:test/test.mem.in
-rectangle_set_test_mem.mem:test/test.mem.in
-segment_tree_test_mem.mem:test/test.mem.in
-sorted_string_map_test_mem.mem:test/test.mem.in
-trie_map_test_mem.mem:test/test.mem.in
-rtree_test_mem.mem:test/test.mem.in
-rtree_test_bulkload_mem.mem:test/test.mem.in
 ])
 AC_OUTPUT
 

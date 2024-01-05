@@ -3,6 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. _index:
+
 mdds documentation
 ==================
 
@@ -19,7 +21,7 @@ Contents:
    flat_segment_tree.rst
    segment_tree.rst
    point_quad_tree.rst
-   multi_type_vector.rst
+   multi_type_vector/index.rst
    multi_type_matrix.rst
    sorted_string_map.rst
    trie_map.rst

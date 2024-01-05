@@ -41,7 +41,7 @@ namespace mdds {
 
 namespace detail { namespace rtree {
 
-struct default_rtree_trait
+struct default_rtree_traits
 {
     /**
      * Number of dimensions in bounding rectangles.
@@ -151,20 +151,20 @@ struct ptr_to_string;
 
 }} // namespace detail::rtree
 
-template<typename _Key, typename _Value, typename _Trait = detail::rtree::default_rtree_trait>
+template<typename KeyT, typename ValueT, typename Traits = detail::rtree::default_rtree_traits>
 class rtree
 {
-    using trait_type = _Trait;
+    using traits_type = Traits;
 
-    constexpr static size_t max_dist_size = trait_type::max_node_size - trait_type::min_node_size * 2 + 2;
+    constexpr static size_t max_dist_size = traits_type::max_node_size - traits_type::min_node_size * 2 + 2;
 
 public:
-    using key_type = _Key;
-    using value_type = _Value;
+    using key_type = KeyT;
+    using value_type = ValueT;
 
     struct point_type
     {
-        key_type d[trait_type::dimensions];
+        key_type d[traits_type::dimensions];
 
         point_type();
         point_type(std::initializer_list<key_type> vs);
@@ -342,7 +342,7 @@ private:
         {
             g1.begin = nodes.begin();
             g1.end = g1.begin;
-            g1.size = trait_type::min_node_size - 1 + dist;
+            g1.size = traits_type::min_node_size - 1 + dist;
             std::advance(g1.end, g1.size);
 
             g2.begin = g1.end;
@@ -407,13 +407,13 @@ private:
     };
 
 public:
-    template<typename _NS>
+    template<typename NS>
     class search_results_base
     {
         friend class rtree;
 
     protected:
-        using node_store_type = _NS;
+        using node_store_type = NS;
 
         struct entry
         {
@@ -737,8 +737,8 @@ public:
      * @param func function or function object that gets called at each node in
      *       the tree.
      */
-    template<typename _Func>
-    void walk(_Func func) const;
+    template<typename FuncT>
+    void walk(FuncT func) const;
 
     /**
      * Check the integrity of the entire tree structure.
@@ -805,8 +805,8 @@ private:
     insertion_point find_leaf_directory_node_for_insertion(const extent_type& bb);
     node_store* find_nonleaf_directory_node_for_insertion(const extent_type& bb, size_t max_depth);
 
-    template<typename _Func>
-    void descend_with_func(_Func func) const;
+    template<typename FuncT>
+    void descend_with_func(FuncT func) const;
 
     using search_condition_type = std::function<bool(const node_store&)>;
 

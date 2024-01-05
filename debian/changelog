@@ -1,3 +1,29 @@
+mdds (2.1.1-2) unstable; urgency=medium
+
+  * upload to unstable 
+
+ -- Rene Engelhard <rene@debian.org>  Fri, 24 Nov 2023 17:38:44 +0100
+
+mdds (2.1.1-1) experimental; urgency=medium
+
+  * New upstream version 2.1.1
+
+ -- Rene Engelhard <rene@debian.org>  Tue, 02 May 2023 19:10:18 +0200
+
+mdds (2.1.0-2) experimental; urgency=medium
+
+  * debian/tests/patches/system-includes.diff: fix for mdds-2.1 
+
+ -- Rene Engelhard <rene@debian.org>  Sat, 14 Jan 2023 09:03:29 +0100
+
+mdds (2.1.0-1) experimental; urgency=medium
+
+  * New upstream version 2.1.0
+
+  * run dh_autoreconf (using ./autogen.sh)
+
+ -- Rene Engelhard <rene@debian.org>  Fri, 13 Jan 2023 18:07:01 +0100
+
 mdds (2.0.3-1) unstable; urgency=medium
 
   * New upstream version 2.0.3
