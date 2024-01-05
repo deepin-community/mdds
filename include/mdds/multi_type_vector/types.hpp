@@ -30,17 +30,13 @@
 #define INCLUDED_MDDS_MULTI_TYPE_VECTOR_TYPES_2_HPP
 
 #include "../global.hpp"
+#include "./types_util.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <memory>
 #include <cstdint>
-
-#ifdef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-#include <deque>
-#else
 #include <vector>
-#endif
 
 #if defined(MDDS_UNIT_TEST) || defined(MDDS_MULTI_TYPE_VECTOR_DEBUG)
 #include <iostream>
@@ -56,18 +52,8 @@ using element_t = int;
 
 constexpr element_t element_type_empty = -1;
 
-constexpr element_t element_type_boolean = 0;
-constexpr element_t element_type_int8 = 1;
-constexpr element_t element_type_uint8 = 2;
-constexpr element_t element_type_int16 = 3;
-constexpr element_t element_type_uint16 = 4;
-constexpr element_t element_type_int32 = 5;
-constexpr element_t element_type_uint32 = 6;
-constexpr element_t element_type_int64 = 7;
-constexpr element_t element_type_uint64 = 8;
-constexpr element_t element_type_float = 9;
-constexpr element_t element_type_double = 10;
-constexpr element_t element_type_string = 11;
+constexpr element_t element_type_reserved_start = 0;
+constexpr element_t element_type_reserved_end = 49;
 
 constexpr element_t element_type_user_start = 50;
 
@@ -180,53 +166,271 @@ protected:
     {}
 };
 
-template<typename _Self, element_t _TypeId, typename _Data>
-class element_block : public base_element_block
+/**
+ * Vector that delays deleting from the front of the vector, which avoids
+ * O(n^2) memory move operations when code needs to delete items from one
+ * element block and add to another element block.
+ */
+template<typename T, typename Allocator = std::allocator<T>>
+class delayed_delete_vector
 {
-#ifdef MDDS_UNIT_TEST
-    struct print_block_array
-    {
-        void operator()(const _Data& val) const
-        {
-            std::cout << val << " ";
-        }
-    };
-#endif
-
-protected:
-#ifdef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-    typedef std::deque<_Data> store_type;
-#else
-    typedef std::vector<_Data> store_type;
-#endif
-    store_type m_array;
-
-    element_block() : base_element_block(_TypeId)
-    {}
-    element_block(size_t n) : base_element_block(_TypeId), m_array(n)
-    {}
-    element_block(size_t n, const _Data& val) : base_element_block(_TypeId), m_array(n, val)
-    {}
-
-    template<typename _Iter>
-    element_block(const _Iter& it_begin, const _Iter& it_end) : base_element_block(_TypeId), m_array(it_begin, it_end)
-    {}
-
+    typedef std::vector<T, Allocator> store_type;
+    store_type m_vec;
+    size_t m_front_offset = 0; // number of elements removed from front of array
 public:
-    static const element_t block_type = _TypeId;
-
+    typedef typename store_type::value_type value_type;
+    typedef typename store_type::size_type size_type;
+    typedef typename store_type::difference_type difference_type;
+    typedef typename store_type::reference reference;
+    typedef typename store_type::const_reference const_reference;
+    typedef typename store_type::pointer pointer;
+    typedef typename store_type::const_pointer const_pointer;
     typedef typename store_type::iterator iterator;
     typedef typename store_type::reverse_iterator reverse_iterator;
     typedef typename store_type::const_iterator const_iterator;
     typedef typename store_type::const_reverse_iterator const_reverse_iterator;
-    typedef _Data value_type;
 
-    bool operator==(const _Self& r) const
+    delayed_delete_vector() : m_vec()
+    {}
+
+    delayed_delete_vector(size_t n, const T& val) : m_vec(n, val)
+    {}
+
+    delayed_delete_vector(size_t n) : m_vec(n)
+    {}
+
+    template<typename InputIt>
+    delayed_delete_vector(InputIt first, InputIt last) : m_vec(first, last)
+    {}
+
+    iterator begin() noexcept
+    {
+        return m_vec.begin() + m_front_offset;
+    }
+
+    iterator end() noexcept
+    {
+        return m_vec.end();
+    }
+
+    const_iterator begin() const noexcept
+    {
+        return m_vec.begin() + m_front_offset;
+    }
+
+    const_iterator end() const noexcept
+    {
+        return m_vec.end();
+    }
+
+    reverse_iterator rbegin() noexcept
+    {
+        return m_vec.rbegin();
+    }
+
+    const_reverse_iterator rbegin() const noexcept
+    {
+        return m_vec.rbegin();
+    }
+
+    reverse_iterator rend() noexcept
+    {
+        return m_vec.rend() - m_front_offset;
+    }
+
+    const_reverse_iterator rend() const noexcept
+    {
+        return m_vec.rend() - m_front_offset;
+    }
+
+    reference operator[](size_type pos)
+    {
+        return m_vec[pos + m_front_offset];
+    }
+
+    const_reference operator[](size_type pos) const
+    {
+        return m_vec[pos + m_front_offset];
+    }
+
+    reference at(size_type pos)
+    {
+        return m_vec.at(pos + m_front_offset);
+    }
+
+    const_reference at(size_type pos) const
+    {
+        return m_vec.at(pos + m_front_offset);
+    }
+
+    void push_back(const T& value)
+    {
+        m_vec.push_back(value);
+    }
+
+    iterator insert(iterator pos, const T& value)
+    {
+        return m_vec.insert(pos, value);
+    }
+
+    iterator insert(const_iterator pos, T&& value)
+    {
+        return m_vec.insert(pos, std::move(value));
+    }
+
+    template<typename InputIt>
+    void insert(iterator pos, InputIt first, InputIt last)
+    {
+        m_vec.insert(pos, first, last);
+    }
+
+    void resize(size_type count)
+    {
+        clear_removed();
+        m_vec.resize(count);
+    }
+
+    iterator erase(iterator pos)
+    {
+        if (pos == m_vec.begin() + m_front_offset)
+        {
+            ++m_front_offset;
+            return m_vec.begin() + m_front_offset;
+        }
+        else
+            return m_vec.erase(pos);
+    }
+
+    iterator erase(iterator first, iterator last)
+    {
+        return m_vec.erase(first, last);
+    }
+
+    size_type capacity() const noexcept
+    {
+        return m_vec.capacity();
+    }
+
+    void shrink_to_fit()
+    {
+        clear_removed();
+        m_vec.shrink_to_fit();
+    }
+
+    void reserve(size_type new_cap)
+    {
+        clear_removed();
+        m_vec.reserve(new_cap);
+    }
+
+    size_type size() const
+    {
+        return m_vec.size() - m_front_offset;
+    }
+
+    template<typename InputIt>
+    void assign(InputIt first, InputIt last)
+    {
+        clear_removed();
+        m_vec.assign(first, last);
+    }
+
+    T* data()
+    {
+        return m_vec.data() + m_front_offset;
+    }
+
+    const T* data() const
+    {
+        return m_vec.data() + m_front_offset;
+    }
+
+private:
+    void clear_removed()
+    {
+        m_vec.erase(m_vec.begin(), m_vec.begin() + m_front_offset);
+        m_front_offset = 0;
+    }
+};
+
+namespace detail {
+
+template<>
+struct is_std_vector_bool_store<delayed_delete_vector<bool>>
+{
+    using type = std::true_type;
+};
+
+} // namespace detail
+
+template<typename T>
+bool operator==(const delayed_delete_vector<T>& lhs, const delayed_delete_vector<T>& rhs)
+{
+    return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
+template<typename Self, element_t TypeId, typename ValueT, template<typename, typename> class StoreT>
+class element_block : public base_element_block
+{
+public:
+    using store_type = StoreT<ValueT, std::allocator<ValueT>>;
+    static constexpr element_t block_type = TypeId;
+
+protected:
+    store_type m_array;
+
+    element_block() : base_element_block(TypeId)
+    {}
+    element_block(size_t n) : base_element_block(TypeId), m_array(n)
+    {}
+    element_block(size_t n, const ValueT& val) : base_element_block(TypeId), m_array(n, val)
+    {}
+
+    template<typename Iter>
+    element_block(const Iter& it_begin, const Iter& it_end) : base_element_block(TypeId), m_array(it_begin, it_end)
+    {}
+
+public:
+    typedef typename store_type::iterator iterator;
+    typedef typename store_type::reverse_iterator reverse_iterator;
+    typedef typename store_type::const_iterator const_iterator;
+    typedef typename store_type::const_reverse_iterator const_reverse_iterator;
+    typedef ValueT value_type;
+
+private:
+    template<bool Mutable>
+    class base_range_type
+    {
+        using block_type = mdds::detail::mutable_t<base_element_block, Mutable>;
+        block_type& m_blk;
+
+    public:
+        using iter_type = std::conditional_t<Mutable, iterator, const_iterator>;
+
+        base_range_type(block_type& blk) : m_blk(blk)
+        {}
+
+        iter_type begin()
+        {
+            return element_block::begin(m_blk);
+        }
+
+        iter_type end()
+        {
+            return element_block::end(m_blk);
+        }
+    };
+
+public:
+    using range_type = base_range_type<true>;
+    using const_range_type = base_range_type<false>;
+
+    bool operator==(const Self& r) const
     {
         return m_array == r.m_array;
     }
 
-    bool operator!=(const _Self& r) const
+    bool operator!=(const Self& r) const
     {
         return !operator==(r);
     }
@@ -311,40 +515,50 @@ public:
         return get(block).m_array.rend();
     }
 
-    static _Self& get(base_element_block& block)
+    static const_range_type range(const base_element_block& block)
+    {
+        return const_range_type(block);
+    }
+
+    static range_type range(base_element_block& block)
+    {
+        return range_type(block);
+    }
+
+    static Self& get(base_element_block& block)
     {
 #ifdef MDDS_MULTI_TYPE_VECTOR_DEBUG
-        if (get_block_type(block) != _TypeId)
+        if (get_block_type(block) != TypeId)
         {
             std::ostringstream os;
-            os << "incorrect block type: expected block type=" << _TypeId
+            os << "incorrect block type: expected block type=" << TypeId
                << ", passed block type=" << get_block_type(block);
             throw general_error(os.str());
         }
 #endif
-        return static_cast<_Self&>(block);
+        return static_cast<Self&>(block);
     }
 
-    static const _Self& get(const base_element_block& block)
+    static const Self& get(const base_element_block& block)
     {
 #ifdef MDDS_MULTI_TYPE_VECTOR_DEBUG
-        if (get_block_type(block) != _TypeId)
+        if (get_block_type(block) != TypeId)
         {
             std::ostringstream os;
-            os << "incorrect block type: expected block type=" << _TypeId
+            os << "incorrect block type: expected block type=" << TypeId
                << ", passed block type=" << get_block_type(block);
             throw general_error(os.str());
         }
 #endif
-        return static_cast<const _Self&>(block);
+        return static_cast<const Self&>(block);
     }
 
-    static void set_value(base_element_block& blk, size_t pos, const _Data& val)
+    static void set_value(base_element_block& blk, size_t pos, const ValueT& val)
     {
         get(blk).m_array[pos] = val;
     }
 
-    static void get_value(const base_element_block& blk, size_t pos, _Data& val)
+    static void get_value(const base_element_block& blk, size_t pos, ValueT& val)
     {
         val = get(blk).m_array[pos];
     }
@@ -354,25 +568,25 @@ public:
         return get(blk).m_array[pos];
     }
 
-    static void append_value(base_element_block& blk, const _Data& val)
+    static void append_value(base_element_block& blk, const ValueT& val)
     {
         get(blk).m_array.push_back(val);
     }
 
-    static void prepend_value(base_element_block& blk, const _Data& val)
+    static void prepend_value(base_element_block& blk, const ValueT& val)
     {
         store_type& blk2 = get(blk).m_array;
         blk2.insert(blk2.begin(), val);
     }
 
-    static _Self* create_block(size_t init_size)
+    static Self* create_block(size_t init_size)
     {
-        return new _Self(init_size);
+        return new Self(init_size);
     }
 
     static void delete_block(const base_element_block* p)
     {
-        delete static_cast<const _Self*>(p);
+        delete static_cast<const Self*>(p);
     }
 
     static void resize_block(base_element_block& blk, size_t new_size)
@@ -382,15 +596,17 @@ public:
 
         // Test if the vector's capacity is larger than twice its current
         // size, and if so, shrink its capacity to free up some memory.
-        if (new_size < (st.capacity() / 2))
-            st.shrink_to_fit();
+        if (new_size < (detail::get_block_capacity(st) / 2))
+            detail::shrink_to_fit(st);
     }
 
 #ifdef MDDS_UNIT_TEST
     static void print_block(const base_element_block& blk)
     {
         const store_type& blk2 = get(blk).m_array;
-        std::for_each(blk2.begin(), blk2.end(), print_block_array());
+        for (const auto& val : blk2)
+            std::cout << val << " ";
+
         std::cout << std::endl;
     }
 #else
@@ -398,19 +614,19 @@ public:
     {}
 #endif
 
-    static void erase_block(base_element_block& blk, size_t pos)
+    static void erase_value(base_element_block& blk, size_t pos)
     {
         store_type& blk2 = get(blk).m_array;
         blk2.erase(blk2.begin() + pos);
     }
 
-    static void erase_block(base_element_block& blk, size_t pos, size_t size)
+    static void erase_values(base_element_block& blk, size_t pos, size_t size)
     {
         store_type& blk2 = get(blk).m_array;
         blk2.erase(blk2.begin() + pos, blk2.begin() + pos + size);
     }
 
-    static void append_values_from_block(base_element_block& dest, const base_element_block& src)
+    static void append_block(base_element_block& dest, const base_element_block& src)
     {
         store_type& d = get(dest).m_array;
         const store_type& s = get(src).m_array;
@@ -423,9 +639,7 @@ public:
         store_type& d = get(dest).m_array;
         const store_type& s = get(src).m_array;
         std::pair<const_iterator, const_iterator> its = get_iterator_pair(s, begin_pos, len);
-#ifndef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-        d.reserve(d.size() + len);
-#endif
+        detail::reserve(d, d.size() + len);
         d.insert(d.end(), its.first, its.second);
     }
 
@@ -444,9 +658,7 @@ public:
         store_type& d = get(dest).m_array;
         const store_type& s = get(src).m_array;
         std::pair<const_iterator, const_iterator> its = get_iterator_pair(s, begin_pos, len);
-#ifndef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-        d.reserve(d.size() + len);
-#endif
+        detail::reserve(d, d.size() + len);
         d.insert(d.begin(), its.first, its.second);
     }
 
@@ -460,52 +672,54 @@ public:
         typename store_type::iterator it1 = st1.begin(), it2 = st2.begin();
         std::advance(it1, pos1);
         std::advance(it2, pos2);
+
         for (size_t i = 0; i < len; ++i, ++it1, ++it2)
         {
-#ifdef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-            std::swap(*it1, *it2);
-#else
             value_type v1 = *it1, v2 = *it2;
             *it1 = v2;
             *it2 = v1;
-#endif
         }
     }
 
-    template<typename _Iter>
-    static void set_values(base_element_block& block, size_t pos, const _Iter& it_begin, const _Iter& it_end)
+    static bool equal_block(const base_element_block& left, const base_element_block& right)
+    {
+        return get(left) == get(right);
+    }
+
+    template<typename Iter>
+    static void set_values(base_element_block& block, size_t pos, const Iter& it_begin, const Iter& it_end)
     {
         store_type& d = get(block).m_array;
         typename store_type::iterator it_dest = d.begin();
         std::advance(it_dest, pos);
-        for (_Iter it = it_begin; it != it_end; ++it, ++it_dest)
+        for (Iter it = it_begin; it != it_end; ++it, ++it_dest)
             *it_dest = *it;
     }
 
-    template<typename _Iter>
-    static void append_values(base_element_block& block, const _Iter& it_begin, const _Iter& it_end)
+    template<typename Iter>
+    static void append_values(base_element_block& block, const Iter& it_begin, const Iter& it_end)
     {
         store_type& d = get(block).m_array;
         typename store_type::iterator it = d.end();
         d.insert(it, it_begin, it_end);
     }
 
-    template<typename _Iter>
-    static void prepend_values(base_element_block& block, const _Iter& it_begin, const _Iter& it_end)
+    template<typename Iter>
+    static void prepend_values(base_element_block& block, const Iter& it_begin, const Iter& it_end)
     {
         store_type& d = get(block).m_array;
         d.insert(d.begin(), it_begin, it_end);
     }
 
-    template<typename _Iter>
-    static void assign_values(base_element_block& dest, const _Iter& it_begin, const _Iter& it_end)
+    template<typename Iter>
+    static void assign_values(base_element_block& dest, const Iter& it_begin, const Iter& it_end)
     {
         store_type& d = get(dest).m_array;
         d.assign(it_begin, it_end);
     }
 
-    template<typename _Iter>
-    static void insert_values(base_element_block& block, size_t pos, const _Iter& it_begin, const _Iter& it_end)
+    template<typename Iter>
+    static void insert_values(base_element_block& block, size_t pos, const Iter& it_begin, const Iter& it_end)
     {
         store_type& blk = get(block).m_array;
         blk.insert(blk.begin() + pos, it_begin, it_end);
@@ -513,19 +727,20 @@ public:
 
     static size_t capacity(const base_element_block& block)
     {
-#ifdef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-        return 0;
-#else
         const store_type& blk = get(block).m_array;
-        return blk.capacity();
-#endif
+        return detail::get_block_capacity(blk);
+    }
+
+    static void reserve(base_element_block& block, std::size_t size)
+    {
+        store_type& blk = get(block).m_array;
+        detail::reserve(blk, size);
     }
 
     static void shrink_to_fit(base_element_block& block)
     {
-#ifndef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-        get(block).m_array.shrink_to_fit();
-#endif
+        store_type& blk = get(block).m_array;
+        detail::shrink_to_fit(blk);
     }
 
 private:
@@ -541,55 +756,55 @@ private:
     }
 };
 
-template<typename _Self, element_t _TypeId, typename _Data>
-class copyable_element_block : public element_block<_Self, _TypeId, _Data>
+template<typename Self, element_t TypeId, typename ValueT, template<typename, typename> class StoreT>
+class copyable_element_block : public element_block<Self, TypeId, ValueT, StoreT>
 {
-    typedef element_block<_Self, _TypeId, _Data> base_type;
+    using base_type = element_block<Self, TypeId, ValueT, StoreT>;
 
 protected:
     copyable_element_block() : base_type()
     {}
     copyable_element_block(size_t n) : base_type(n)
     {}
-    copyable_element_block(size_t n, const _Data& val) : base_type(n, val)
+    copyable_element_block(size_t n, const ValueT& val) : base_type(n, val)
     {}
 
-    template<typename _Iter>
-    copyable_element_block(const _Iter& it_begin, const _Iter& it_end) : base_type(it_begin, it_end)
+    template<typename Iter>
+    copyable_element_block(const Iter& it_begin, const Iter& it_end) : base_type(it_begin, it_end)
     {}
 
 public:
     using base_type::get;
 
-    static _Self* clone_block(const base_element_block& blk)
+    static Self* clone_block(const base_element_block& blk)
     {
         // Use copy constructor to copy the data.
-        return new _Self(get(blk));
+        return new Self(get(blk));
     }
 };
 
-template<typename _Self, element_t _TypeId, typename _Data>
-class noncopyable_element_block : public element_block<_Self, _TypeId, _Data>
+template<typename Self, element_t TypeId, typename ValueT, template<typename, typename> class StoreT>
+class noncopyable_element_block : public element_block<Self, TypeId, ValueT, StoreT>
 {
-    typedef element_block<_Self, _TypeId, _Data> base_type;
+    using base_type = element_block<Self, TypeId, ValueT, StoreT>;
 
 protected:
     noncopyable_element_block() : base_type()
     {}
     noncopyable_element_block(size_t n) : base_type(n)
     {}
-    noncopyable_element_block(size_t n, const _Data& val) : base_type(n, val)
+    noncopyable_element_block(size_t n, const ValueT& val) : base_type(n, val)
     {}
 
-    template<typename _Iter>
-    noncopyable_element_block(const _Iter& it_begin, const _Iter& it_end) : base_type(it_begin, it_end)
+    template<typename Iter>
+    noncopyable_element_block(const Iter& it_begin, const Iter& it_end) : base_type(it_begin, it_end)
     {}
 
 public:
     noncopyable_element_block(const noncopyable_element_block&) = delete;
     noncopyable_element_block& operator=(const noncopyable_element_block&) = delete;
 
-    static _Self* clone_block(const base_element_block&)
+    static Self* clone_block(const base_element_block&)
     {
         throw element_block_error("attempted to clone a noncopyable element block.");
     }
@@ -611,30 +826,31 @@ inline element_t get_block_type(const base_element_block& blk)
  * Template for default, unmanaged element block for use in
  * multi_type_vector.
  */
-template<element_t _TypeId, typename _Data>
-struct default_element_block : public copyable_element_block<default_element_block<_TypeId, _Data>, _TypeId, _Data>
+template<element_t TypeId, typename ValueT, template<typename, typename> class StoreT = delayed_delete_vector>
+struct default_element_block
+    : public copyable_element_block<default_element_block<TypeId, ValueT, StoreT>, TypeId, ValueT, StoreT>
 {
-    typedef copyable_element_block<default_element_block, _TypeId, _Data> base_type;
-    typedef default_element_block<_TypeId, _Data> self_type;
+    using self_type = default_element_block<TypeId, ValueT, StoreT>;
+    using base_type = copyable_element_block<self_type, TypeId, ValueT, StoreT>;
 
     default_element_block() : base_type()
     {}
     default_element_block(size_t n) : base_type(n)
     {}
-    default_element_block(size_t n, const _Data& val) : base_type(n, val)
+    default_element_block(size_t n, const ValueT& val) : base_type(n, val)
     {}
 
-    template<typename _Iter>
-    default_element_block(const _Iter& it_begin, const _Iter& it_end) : base_type(it_begin, it_end)
+    template<typename Iter>
+    default_element_block(const Iter& it_begin, const Iter& it_end) : base_type(it_begin, it_end)
     {}
 
-    static self_type* create_block_with_value(size_t init_size, const _Data& val)
+    static self_type* create_block_with_value(size_t init_size, const ValueT& val)
     {
         return new self_type(init_size, val);
     }
 
-    template<typename _Iter>
-    static self_type* create_block_with_values(const _Iter& it_begin, const _Iter& it_end)
+    template<typename Iter>
+    static self_type* create_block_with_values(const Iter& it_begin, const Iter& it_end)
     {
         return new self_type(it_begin, it_end);
     }
@@ -649,14 +865,16 @@ struct default_element_block : public copyable_element_block<default_element_blo
  * Template for element block that stores pointers to objects whose life
  * cycles are managed by the block.
  */
-template<element_t _TypeId, typename _Data>
-struct managed_element_block : public copyable_element_block<managed_element_block<_TypeId, _Data>, _TypeId, _Data*>
+template<element_t TypeId, typename ValueT, template<typename, typename> class StoreT = delayed_delete_vector>
+struct managed_element_block
+    : public copyable_element_block<managed_element_block<TypeId, ValueT, StoreT>, TypeId, ValueT*, StoreT>
 {
-    typedef copyable_element_block<managed_element_block<_TypeId, _Data>, _TypeId, _Data*> base_type;
-    typedef managed_element_block<_TypeId, _Data> self_type;
+    using self_type = managed_element_block<TypeId, ValueT, StoreT>;
+    using base_type = copyable_element_block<self_type, TypeId, ValueT*, StoreT>;
 
     using base_type::get;
     using base_type::m_array;
+    using base_type::reserve;
     using base_type::set_value;
 
     managed_element_block() : base_type()
@@ -665,24 +883,21 @@ struct managed_element_block : public copyable_element_block<managed_element_blo
     {}
     managed_element_block(const managed_element_block& r)
     {
-#ifndef MDDS_MULTI_TYPE_VECTOR_USE_DEQUE
-        m_array.reserve(r.m_array.size());
-#endif
-        typename managed_element_block::store_type::const_iterator it = r.m_array.begin(), it_end = r.m_array.end();
-        for (; it != it_end; ++it)
-            m_array.push_back(new _Data(**it));
+        detail::reserve(m_array, r.m_array.size());
+        for (const auto& v : r.m_array)
+            m_array.push_back(new ValueT(*v));
     }
 
-    template<typename _Iter>
-    managed_element_block(const _Iter& it_begin, const _Iter& it_end) : base_type(it_begin, it_end)
+    template<typename Iter>
+    managed_element_block(const Iter& it_begin, const Iter& it_end) : base_type(it_begin, it_end)
     {}
 
     ~managed_element_block()
     {
-        std::for_each(m_array.begin(), m_array.end(), std::default_delete<_Data>());
+        std::for_each(m_array.begin(), m_array.end(), std::default_delete<ValueT>());
     }
 
-    static self_type* create_block_with_value(size_t init_size, _Data* val)
+    static self_type* create_block_with_value(size_t init_size, ValueT* val)
     {
         // Managed blocks don't support initialization with value.
         if (init_size > 1)
@@ -695,8 +910,8 @@ struct managed_element_block : public copyable_element_block<managed_element_blo
         return blk.release();
     }
 
-    template<typename _Iter>
-    static self_type* create_block_with_values(const _Iter& it_begin, const _Iter& it_end)
+    template<typename Iter>
+    static self_type* create_block_with_values(const Iter& it_begin, const Iter& it_end)
     {
         return new self_type(it_begin, it_end);
     }
@@ -706,16 +921,17 @@ struct managed_element_block : public copyable_element_block<managed_element_blo
         managed_element_block& blk = get(block);
         typename managed_element_block::store_type::iterator it = blk.m_array.begin() + pos;
         typename managed_element_block::store_type::iterator it_end = it + len;
-        std::for_each(it, it_end, std::default_delete<_Data>());
+        std::for_each(it, it_end, std::default_delete<ValueT>());
     }
 };
 
-template<element_t _TypeId, typename _Data>
+template<element_t TypeId, typename ValueT, template<typename, typename> class StoreT = delayed_delete_vector>
 struct noncopyable_managed_element_block
-    : public noncopyable_element_block<noncopyable_managed_element_block<_TypeId, _Data>, _TypeId, _Data*>
+    : public noncopyable_element_block<
+          noncopyable_managed_element_block<TypeId, ValueT, StoreT>, TypeId, ValueT*, StoreT>
 {
-    typedef noncopyable_element_block<noncopyable_managed_element_block<_TypeId, _Data>, _TypeId, _Data*> base_type;
-    typedef managed_element_block<_TypeId, _Data> self_type;
+    using self_type = noncopyable_managed_element_block<TypeId, ValueT, StoreT>;
+    using base_type = noncopyable_element_block<self_type, TypeId, ValueT*, StoreT>;
 
     using base_type::get;
     using base_type::m_array;
@@ -726,16 +942,16 @@ struct noncopyable_managed_element_block
     noncopyable_managed_element_block(size_t n) : base_type(n)
     {}
 
-    template<typename _Iter>
-    noncopyable_managed_element_block(const _Iter& it_begin, const _Iter& it_end) : base_type(it_begin, it_end)
+    template<typename Iter>
+    noncopyable_managed_element_block(const Iter& it_begin, const Iter& it_end) : base_type(it_begin, it_end)
     {}
 
     ~noncopyable_managed_element_block()
     {
-        std::for_each(m_array.begin(), m_array.end(), std::default_delete<_Data>());
+        std::for_each(m_array.begin(), m_array.end(), std::default_delete<ValueT>());
     }
 
-    static self_type* create_block_with_value(size_t init_size, _Data* val)
+    static self_type* create_block_with_value(size_t init_size, ValueT* val)
     {
         // Managed blocks don't support initialization with value.
         if (init_size > 1)
@@ -748,8 +964,8 @@ struct noncopyable_managed_element_block
         return blk.release();
     }
 
-    template<typename _Iter>
-    static self_type* create_block_with_values(const _Iter& it_begin, const _Iter& it_end)
+    template<typename Iter>
+    static self_type* create_block_with_values(const Iter& it_begin, const Iter& it_end)
     {
         return new self_type(it_begin, it_end);
     }
@@ -759,22 +975,34 @@ struct noncopyable_managed_element_block
         noncopyable_managed_element_block& blk = get(block);
         typename noncopyable_managed_element_block::store_type::iterator it = blk.m_array.begin() + pos;
         typename noncopyable_managed_element_block::store_type::iterator it_end = it + len;
-        std::for_each(it, it_end, std::default_delete<_Data>());
+        std::for_each(it, it_end, std::default_delete<ValueT>());
     }
 };
 
-using boolean_element_block = default_element_block<mtv::element_type_boolean, bool>;
-using int8_element_block = default_element_block<mtv::element_type_int8, int8_t>;
-using uint8_element_block = default_element_block<mtv::element_type_uint8, uint8_t>;
-using int16_element_block = default_element_block<mtv::element_type_int16, int16_t>;
-using uint16_element_block = default_element_block<mtv::element_type_uint16, uint16_t>;
-using int32_element_block = default_element_block<mtv::element_type_int32, int32_t>;
-using uint32_element_block = default_element_block<mtv::element_type_uint32, uint32_t>;
-using int64_element_block = default_element_block<mtv::element_type_int64, int64_t>;
-using uint64_element_block = default_element_block<mtv::element_type_uint64, uint64_t>;
-using float_element_block = default_element_block<mtv::element_type_float, float>;
-using double_element_block = default_element_block<mtv::element_type_double, double>;
-using string_element_block = default_element_block<mtv::element_type_string, std::string>;
+namespace detail {
+
+template<typename Blk>
+bool get_block_element_at(const mdds::mtv::base_element_block& data, size_t offset, std::true_type)
+{
+    auto it = Blk::cbegin(data);
+    std::advance(it, offset);
+    return *it;
+}
+
+template<typename Blk>
+typename Blk::value_type get_block_element_at(const mdds::mtv::base_element_block& data, size_t offset, std::false_type)
+{
+    return Blk::at(data, offset);
+}
+
+template<typename Blk>
+typename Blk::value_type get_block_element_at(const mdds::mtv::base_element_block& data, size_t offset)
+{
+    typename mdds::mtv::detail::has_std_vector_bool_store<Blk>::type v;
+    return get_block_element_at<Blk>(data, offset, v);
+}
+
+} // namespace detail
 
 }} // namespace mdds::mtv
 

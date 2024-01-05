@@ -13,6 +13,7 @@
 	dh  $@
 
 override_dh_auto_configure:
+	dh_autoreconf ./autogen.sh
 	dh_auto_configure --buildsystem=autoconf
 
 override_dh_auto_build:
@@ -24,6 +25,7 @@ ifneq (nocheck,$(DEB_BUILD_OPTIONS))
 endif
 
 override_dh_clean:
+	dh_autoreconf_clean
 ifneq (nocheck,$(DEB_BUILD_OPTIONS))
 	rm -rf obj
 endif

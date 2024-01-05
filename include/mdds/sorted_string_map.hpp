@@ -1,6 +1,7 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*************************************************************************
  *
- * Copyright (c) 2014 Kohei Yoshida
+ * Copyright (c) 2022 Kohei Yoshida
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -25,35 +26,49 @@
  *
  ************************************************************************/
 
-#ifndef MDDS_SORTED_STRING_MAP_HPP
-#define MDDS_SORTED_STRING_MAP_HPP
+#pragma once
 
 #include <cstdlib>
+#include <string_view>
 
 namespace mdds {
+
+/**
+ * Single key-value entry.  Caller must provide at compile time a static array
+ * of these entries.
+ *
+ * @param key memory address of the first character of the char buffer that
+ *            stores the key.
+ * @param key_length length of the char buffer.
+ * @param value value associated with the key.
+ */
+template<typename ValueT, typename SizeT>
+struct chars_map_entry
+{
+    const char* key;
+    SizeT key_length;
+    ValueT value;
+};
+
+template<typename ValueT, typename SizeT>
+struct string_view_map_entry
+{
+    std::string_view key;
+    ValueT value;
+};
 
 /**
  * sorted_string_map provides an efficient way to map string keys to
  * arbitrary values, provided that the keys are known at compile time and
  * are sorted in ascending order.
  */
-template<typename _ValueT>
+template<typename ValueT, template<typename, typename> class EntryT = chars_map_entry>
 class sorted_string_map
 {
 public:
-    typedef _ValueT value_type;
-    typedef size_t size_type;
-
-    /**
-     * Single key-value entry.  Caller must provide at compile time a static
-     * array of these entries.
-     */
-    struct entry
-    {
-        const char* key;
-        size_type keylen;
-        value_type value;
-    };
+    using value_type = ValueT;
+    using size_type = std::size_t;
+    using entry = EntryT<ValueT, size_type>;
 
     /**
      * Constructor.
@@ -78,6 +93,16 @@ public:
     value_type find(const char* input, size_type len) const;
 
     /**
+     * Find a value associated with a specified string key.
+     *
+     * @param input string key to match.
+     *
+     * @return value associated with the key, or the null value in case the
+     *         key is not found.
+     */
+    value_type find(std::string_view input) const;
+
+    /**
      * Return the number of entries in the map.  Since the number of entries
      * is statically defined at compile time, this method always returns the
      * same value.
@@ -97,4 +122,4 @@ private:
 
 #include "sorted_string_map_def.inl"
 
-#endif
+/* vim:set shiftwidth=4 softtabstop=4 expandtab: */

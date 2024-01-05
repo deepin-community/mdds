@@ -36,8 +36,8 @@ namespace mdds {
  * Type alias for the concrete implementation to maintain backward API
  * compatibility.
  */
-template<typename ElemBlockFunc, typename Trait = mtv::default_trait>
-using multi_type_vector = mtv::soa::multi_type_vector<ElemBlockFunc, Trait>;
+template<typename Traits = mtv::default_traits>
+using multi_type_vector = mtv::soa::multi_type_vector<Traits>;
 
 } // namespace mdds
 

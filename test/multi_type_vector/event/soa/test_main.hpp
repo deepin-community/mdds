@@ -30,13 +30,12 @@
 
 #define MDDS_MULTI_TYPE_VECTOR_DEBUG 1
 #include <mdds/multi_type_vector/soa/main.hpp>
-#include <mdds/multi_type_vector/trait.hpp>
 
 #include <iostream>
 #include <vector>
 
-template<typename BlkFunc, typename Trait>
-using mtv_template_type = mdds::mtv::soa::multi_type_vector<BlkFunc, Trait>;
+template<typename Traits>
+using mtv_template_type = mdds::mtv::soa::multi_type_vector<Traits>;
 
 void mtv_test_block_counter();
 void mtv_test_block_init();

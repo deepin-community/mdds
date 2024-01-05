@@ -45,7 +45,7 @@ namespace trie {
  * Template for a key type implemented using a typical STL container type.
  */
 template<typename ContainerT>
-struct std_container_trait
+struct std_container_traits
 {
     /** type used to store a key value. */
     using key_type = ContainerT;
@@ -139,7 +139,7 @@ struct std_container_trait
     }
 };
 
-using std_string_trait = std_container_trait<std::string>;
+using std_string_traits = std_container_traits<std::string>;
 
 /** Serializer for numeric data types. */
 template<typename T>
@@ -194,7 +194,7 @@ struct value_serializer : numeric_value_serializer<T>
 };
 
 template<typename T>
-struct value_serializer<T, typename std::enable_if<has_value_type<T>::value>::type>
+struct value_serializer<T, typename std::enable_if<mdds::detail::has_value_type<T>::value>::type>
     : numeric_sequence_value_serializer<T>
 {
 };
@@ -206,7 +206,7 @@ struct value_serializer<std::string> : variable_value_serializer<std::string>
 
 } // namespace trie
 
-template<typename _KeyTrait, typename _ValueT>
+template<typename KeyTraits, typename ValueT>
 class packed_trie_map;
 
 /**
@@ -215,10 +215,10 @@ class packed_trie_map;
  * are stored in an ordered tree structure known as trie, or sometimes
  * referred to as prefix tree.
  */
-template<typename _KeyTrait, typename _ValueT>
+template<typename KeyTraits, typename ValueT>
 class trie_map
 {
-    friend class packed_trie_map<_KeyTrait, _ValueT>;
+    friend class packed_trie_map<KeyTraits, ValueT>;
     friend class trie::detail::iterator_base<trie_map, true>;
     friend class trie::detail::iterator_base<trie_map, false>;
     friend class trie::detail::const_iterator<trie_map>;
@@ -228,12 +228,12 @@ class trie_map
     friend trie::detail::get_node_stack_type<trie_map, std::false_type>;
 
 public:
-    typedef packed_trie_map<_KeyTrait, _ValueT> packed_type;
-    typedef _KeyTrait key_trait_type;
-    typedef typename key_trait_type::key_type key_type;
-    typedef typename key_trait_type::key_buffer_type key_buffer_type;
-    typedef typename key_trait_type::key_unit_type key_unit_type;
-    typedef _ValueT value_type;
+    typedef packed_trie_map<KeyTraits, ValueT> packed_type;
+    typedef KeyTraits key_traits_type;
+    typedef typename key_traits_type::key_type key_type;
+    typedef typename key_traits_type::key_buffer_type key_buffer_type;
+    typedef typename key_traits_type::key_unit_type key_unit_type;
+    typedef ValueT value_type;
     typedef size_t size_type;
     typedef std::pair<key_type, value_type> key_value_type;
 
@@ -257,14 +257,15 @@ private:
         void swap(trie_node& other);
     };
 
-    template<bool _IsConst>
+    template<bool IsConst>
     struct stack_item
     {
-        using _is_const = bool_constant<_IsConst>;
+        using _is_const = std::bool_constant<IsConst>;
 
-        using child_pos_type = typename get_iterator_type<typename trie_node::children_type, _is_const>::type;
+        using child_pos_type =
+            typename mdds::detail::get_iterator_type<typename trie_node::children_type, _is_const>::type;
 
-        using trie_node_type = typename const_or_not<trie_node, _is_const>::type;
+        using trie_node_type = typename mdds::detail::const_or_not<trie_node, _is_const>::type;
 
         trie_node_type* node;
         child_pos_type child_pos;
@@ -437,13 +438,13 @@ private:
     const trie_node* find_prefix_node(
         const trie_node& node, const key_unit_type* prefix, const key_unit_type* prefix_end) const;
 
-    template<bool _IsConst>
+    template<bool IsConst>
     void find_prefix_node_with_stack(
-        std::vector<stack_item<_IsConst>>& node_stack, const_t<trie_node, _IsConst>& node, const key_unit_type* prefix,
-        const key_unit_type* prefix_end) const;
+        std::vector<stack_item<IsConst>>& node_stack, mdds::detail::const_t<trie_node, IsConst>& node,
+        const key_unit_type* prefix, const key_unit_type* prefix_end) const;
 
-    template<bool _IsConst>
-    key_buffer_type build_key_buffer_from_node_stack(const std::vector<stack_item<_IsConst>>& node_stack) const;
+    template<bool IsConst>
+    key_buffer_type build_key_buffer_from_node_stack(const std::vector<stack_item<IsConst>>& node_stack) const;
 
     void count_values(size_type& n, const trie_node& node) const;
 
@@ -461,18 +462,18 @@ private:
  * Note that, since this container is immutable, the content of the
  * container cannot be modified once constructed.
  */
-template<typename _KeyTrait, typename _ValueT>
+template<typename KeyTraits, typename ValueT>
 class packed_trie_map
 {
     friend class trie::detail::packed_iterator_base<packed_trie_map>;
     friend class trie::detail::packed_search_results<packed_trie_map>;
 
 public:
-    typedef _KeyTrait key_trait_type;
-    typedef typename key_trait_type::key_type key_type;
-    typedef typename key_trait_type::key_buffer_type key_buffer_type;
-    typedef typename key_trait_type::key_unit_type key_unit_type;
-    typedef _ValueT value_type;
+    typedef KeyTraits key_traits_type;
+    typedef typename key_traits_type::key_type key_type;
+    typedef typename key_traits_type::key_buffer_type key_buffer_type;
+    typedef typename key_traits_type::key_unit_type key_unit_type;
+    typedef ValueT value_type;
     typedef size_t size_type;
     typedef std::pair<key_type, value_type> key_value_type;
     typedef trie::detail::packed_iterator_base<packed_trie_map> const_iterator;
@@ -563,7 +564,7 @@ public:
      *
      * @param other mdds::trie_map instance to build content from.
      */
-    packed_trie_map(const trie_map<key_trait_type, value_type>& other);
+    packed_trie_map(const trie_map<key_traits_type, value_type>& other);
 
     packed_trie_map(const packed_trie_map& other);
 
@@ -646,7 +647,7 @@ public:
      *
      * @param os output stream to write the state to.
      */
-    template<typename _Func = trie::value_serializer<value_type>>
+    template<typename FuncT = trie::value_serializer<value_type>>
     void save_state(std::ostream& os) const;
 
     /**
@@ -655,7 +656,7 @@ public:
      *
      * @param is input stream to load the state from.
      */
-    template<typename _Func = trie::value_serializer<value_type>>
+    template<typename FuncT = trie::value_serializer<value_type>>
     void load_state(std::istream& is);
 
     /**
@@ -672,12 +673,12 @@ private:
         trie_node& root, node_pool_type& node_pool, const entry* start, const entry* end, size_type pos);
 
     size_type compact_node(const trie_node& node);
-    size_type compact_node(const typename trie_map<_KeyTrait, _ValueT>::trie_node& node);
+    size_type compact_node(const typename trie_map<KeyTraits, ValueT>::trie_node& node);
 
     void push_child_offsets(size_type offset, const child_offsets_type& child_offsets);
 
     void compact(const trie_node& root);
-    void compact(const typename trie_map<_KeyTrait, _ValueT>::trie_node& root);
+    void compact(const typename trie_map<KeyTraits, ValueT>::trie_node& root);
 
     const uintptr_t* find_prefix_node(
         const uintptr_t* p, const key_unit_type* prefix, const key_unit_type* prefix_end) const;

@@ -30,10 +30,9 @@
 
 #define MDDS_MULTI_TYPE_VECTOR_DEBUG 1
 #include <mdds/multi_type_vector/soa/main.hpp>
-#include <mdds/multi_type_vector/trait.hpp>
 
-template<typename Trait>
-using mtv_alias_type = mdds::mtv::soa::multi_type_vector<mdds::mtv::element_block_func, Trait>;
+template<typename Traits>
+using mtv_alias_type = mdds::mtv::soa::multi_type_vector<Traits>;
 
 void mtv_test_loop_unrolling_0();
 void mtv_test_loop_unrolling_4();

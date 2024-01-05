@@ -54,10 +54,8 @@ bool parse_cmd_options(int argc, char** argv, cmd_options& opt)
         }
     }
     else
-    {
-        cout << "please specify test categories: [perf, func]" << endl;
-        return false;
-    }
+        opt.test_func = true;
+
     return true;
 }
 
@@ -84,6 +82,12 @@ double stack_watch::get_duration() const
 }
 
 stack_printer::stack_printer(const char* msg) : m_msg(msg)
+{
+    std::cout << m_msg << ": --begin" << std::endl;
+    m_start_time = get_current_time();
+}
+
+stack_printer::stack_printer(std::string msg) : m_msg(std::move(msg))
 {
     std::cout << m_msg << ": --begin" << std::endl;
     m_start_time = get_current_time();

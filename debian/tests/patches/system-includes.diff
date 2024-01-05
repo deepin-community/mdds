@@ -5,7 +5,7 @@ index 877a5e2..3930e10 100644
 @@ -1,5 +1,5 @@
  
 -AM_CPPFLAGS = -I$(top_srcdir)/include -DNDEBUG
-+AM_CPPFLAGS = $(shell pkg-config --cflags mdds-2.0) -DNDEBUG
++AM_CPPFLAGS = $(shell pkg-config --cflags mdds-2.1) -DNDEBUG
  
  EXTRA_PROGRAMS = \
  	flat-segment-tree \

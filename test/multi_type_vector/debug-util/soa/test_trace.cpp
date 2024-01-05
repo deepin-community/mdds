@@ -31,7 +31,6 @@
 
 #define MDDS_MULTI_TYPE_VECTOR_DEBUG 1
 #include <mdds/multi_type_vector/soa/main.hpp>
-#include <mdds/multi_type_vector/trait.hpp>
 
 using mdds::mtv::trace_method_t;
 
@@ -104,7 +103,7 @@ public:
 
 std::vector<checked_method_props> observed;
 
-struct mtv_custom_trait : public mdds::mtv::default_trait
+struct mtv_custom_trait : public mdds::mtv::standard_element_blocks_traits
 {
     static void trace(const mdds::mtv::trace_method_properties_t& props)
     {
@@ -122,7 +121,7 @@ struct mtv_custom_trait : public mdds::mtv::default_trait
     }
 };
 
-using mtv_type = mdds::mtv::soa::multi_type_vector<mdds::mtv::element_block_func, mtv_custom_trait>;
+using mtv_type = mdds::mtv::soa::multi_type_vector<mtv_custom_trait>;
 
 } // anonymous namespace
 
